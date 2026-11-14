@@ -201,6 +201,22 @@ describe.skipIf(!hasData)('vistas con datos reales', () => {
     expect(await render('#/guia/glosario/velocity')).toContain('unidades por día');
   });
 
+  it('cómo usar: cambiar de pregunta desde el último paso no deja la página en blanco', async () => {
+    await render('#/guia?esc=A', (el) => {
+      const pills = () => [...el.querySelectorAll<HTMLButtonElement>('[aria-label="Recorridos"] .pill')];
+      const steps = () => [...el.querySelectorAll<HTMLButtonElement>('.tour-steps button')];
+      // Último paso del primer recorrido (6 pasos) y luego cada uno de los demás, incluido el de 3 pasos
+      act(() => steps()[steps().length - 1].click());
+      expect(el.querySelector('.tour-text')?.textContent).toContain('Paso 6 de 6');
+      for (const pill of pills().slice(1)) {
+        act(() => steps()[steps().length - 1].click());
+        act(() => pill.click());
+        expect(el.querySelector('.tour-text')?.textContent).toMatch(/^Paso 1 de \d/);
+        expect(el.querySelector('.tour-screen')).not.toBeNull();
+      }
+    });
+  });
+
   it('origen de los datos con pendientes', async () => {
     const t = await render('#/datos');
     expect(t).toContain('impact_sum_matches_total_A');
