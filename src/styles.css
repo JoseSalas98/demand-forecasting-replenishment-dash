@@ -160,6 +160,46 @@ th.sortable:hover { color: var(--text); }
 .profile-row .norm { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
 
+/* Ayuda "?" con definición del glosario */
+.help { position: relative; display: inline-block; vertical-align: middle; }
+.help-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+  background: transparent;
+  color: var(--text-muted);
+  font: 700 11px/1 inherit;
+  cursor: help;
+  padding: 0;
+  margin-left: 4px;
+}
+.help-btn:hover, .help-btn[aria-expanded='true'] { border-color: var(--cyan); color: var(--cyan); }
+.help-btn:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.help-pop {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: -8px;
+  width: 280px;
+  max-width: 80vw;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.45;
+  color: var(--text);
+  text-align: left;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+.help-pop .help-unit { color: var(--text-muted); }
+
 /* Embudo */
 .axis-title { font-size: 12px; color: var(--text-muted); margin: 2px 0; }
 
@@ -264,8 +304,135 @@ button { font-family: inherit; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 details summary { cursor: pointer; margin: 8px 0; color: var(--text-muted); }
 
+.demand-share { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--text); }
+.demand-share .money { display: inline-flex; vertical-align: top; }
+
+/* Cómo usar: recorrido guiado */
+.tour { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 20px; align-items: start; }
+.tour-screen {
+  position: relative;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  min-height: 300px;
+  overflow: hidden;
+}
+.tour-side { background: var(--panel); border-radius: 8px; padding: 8px 6px; display: flex; flex-direction: column; gap: 4px; }
+.tour-logo { color: var(--cyan); font-weight: 700; letter-spacing: 3px; padding: 2px 6px 8px; }
+.tour-nav { font-size: 11px; color: var(--text-muted); padding: 5px 6px; border-radius: 6px; border: 1px solid transparent; }
+.tour-nav.current { background: var(--card); border-color: var(--border); color: var(--text); font-weight: 700; }
+.tour-nav.foot { margin-top: auto; }
+.tour-main { display: grid; gap: 6px; grid-auto-rows: minmax(38px, auto); }
+.tour-zone {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0.55;
+  transition: opacity 0.4s, border-color 0.4s;
+}
+.tour-zone.target, .tour-nav[data-zone='nav'] { opacity: 1; border-color: var(--cyan); color: var(--text); }
+.tour-zone.target { animation: tour-pulse 1.6s ease-in-out infinite; }
+.tour-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: var(--text);
+  pointer-events: none;
+  transition: transform 0.9s cubic-bezier(0.45, 0, 0.2, 1);
+}
+.tour-cursor svg { position: absolute; top: -2px; left: -4px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6)); }
+.tour-ripple {
+  position: absolute;
+  top: -14px;
+  left: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--cyan);
+  opacity: 0;
+  animation: tour-click 0.7s ease-out 0.9s;
+}
+@keyframes tour-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(0, 159, 202, 0.45); } 50% { box-shadow: 0 0 0 5px rgba(0, 159, 202, 0); } }
+@keyframes tour-click { 0% { opacity: 1; transform: scale(0.3); } 100% { opacity: 0; transform: scale(1.4); } }
+.tour-screen.still .tour-cursor { transition: none; }
+.tour-screen.still .tour-zone.target, .tour-screen.still .tour-ripple { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .tour-cursor { transition: none; }
+  .tour-zone.target, .tour-ripple { animation: none; }
+}
+.tour-steps { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.tour-steps button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  padding: 6px 8px;
+  cursor: pointer;
+}
+.tour-steps button:hover { color: var(--text); }
+.tour-steps button.active { background: var(--panel); border-color: var(--border); color: var(--text); font-weight: 700; }
+.tour-steps button.done { color: var(--text); }
+.tour-num {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+.tour-steps button.active .tour-num { background: var(--cyan); border-color: var(--cyan); color: var(--bg); }
+.tour-text { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+.tour-text p { margin: 6px 0 0; line-height: 1.5; }
+
+/* Cómo usar: listas y glosario */
+.guide-list { padding-left: 18px; line-height: 1.6; }
+.guide-search {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  padding: 8px 16px;
+  font: inherit;
+  width: 260px;
+  max-width: 100%;
+}
+.guide-search:focus { outline: none; border-color: var(--cyan); }
+.glossary-group h3 { margin: 18px 0 6px; color: var(--text-muted); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+.glossary-group dl { margin: 0; }
+.glossary-entry { display: grid; grid-template-columns: 220px 1fr; gap: 16px; padding: 10px 8px; border-bottom: 1px solid var(--border); border-radius: 6px; scroll-margin-top: 24px; }
+.glossary-entry dt { font-weight: 700; }
+.glossary-entry dd { margin: 0; line-height: 1.5; }
+.glossary-entry .help-unit { color: var(--text-muted); }
+.glossary-entry.highlight { background: var(--panel); outline: 1px solid var(--cyan); }
+
 @media (max-width: 1100px) {
   .grid-3, .grid-main, .grid-impact, .grid-2 { grid-template-columns: 1fr; }
+  .tour { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .tour-screen { grid-template-columns: 72px 1fr; }
+  .glossary-entry { grid-template-columns: 1fr; gap: 4px; }
 }
 @media (max-width: 900px) {
   .layout { grid-template-columns: 1fr; }

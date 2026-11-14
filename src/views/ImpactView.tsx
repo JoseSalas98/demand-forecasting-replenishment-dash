@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ImpactCurve } from '../components/charts/ImpactCurve';
 import { SegmentBars } from '../components/charts/SegmentBars';
+import { HelpTip } from '../components/HelpTip';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { Money } from '../components/Money';
 import { Pill, SCENARIO_LABEL, ScenarioPills } from '../components/Pill';
@@ -33,6 +34,9 @@ export function ImpactView({ scenario }: { scenario: Scenario }) {
   const pm = modelCurve[idx];
   const pn = naiveCurve[idx];
   const wr = m.wrmsse_units;
+  // Proporción de dos cifras exportadas (sin recalcular el impacto): ahorro ÷ demanda del año de test
+  const testDemand = m.total_demand_test;
+  const pctOfDemand = (v: number) => (testDemand > 0 ? (v / testDemand) * 100 : null);
   const top = [...items.data.items].sort((a, b) => b.impact[scenario].impact - a.impact[scenario].impact).slice(0, 10);
 
   return (
@@ -45,12 +49,18 @@ export function ImpactView({ scenario }: { scenario: Scenario }) {
         <div className="card">
           <div className="title">Exceso evitado</div>
           <div className="big-number accent"><Money value={h.saving_excess95} compact /></div>
-          <div className="small muted">−{fmtPct(h.saving_excess95_pct, 0)} · servicio 95 % · manifiesto</div>
+          <div className="small muted">−{fmtPct(h.saving_excess95_pct, 0)} del exceso de la línea base · servicio 95 % · manifiesto</div>
+          <div className="small demand-share">
+            = {fmtPct(pctOfDemand(h.saving_excess95))} de la demanda del año de test <HelpTip id="demanda-test" scenario={scenario} />
+          </div>
         </div>
         <div className="card">
           <div className="title">Venta recuperada</div>
           <div className="big-number"><Money value={h.recovered_sales_same_excess} compact /></div>
           <div className="small muted">con el mismo exceso · manifiesto</div>
+          <div className="small demand-share">
+            = {fmtPct(pctOfDemand(h.recovered_sales_same_excess))} de la demanda del año de test <HelpTip id="demanda-test" scenario={scenario} />
+          </div>
         </div>
         <div className="card">
           <div className="title">WRMSSE en test · {SCENARIO_LABEL[scenario]}</div>
@@ -64,6 +74,7 @@ export function ImpactView({ scenario }: { scenario: Scenario }) {
           <div className="title">Artículos</div>
           <div className="big-number">{fmtNumber(seg.total.n_items)}</div>
           <div className="small muted">AX {fmtNumber(seg.AX.n_items)} · AY {fmtNumber(seg.AY.n_items)} · AZ {fmtNumber(seg.AZ.n_items)}</div>
+          <div className="small demand-share">Demanda del año de test: <Money value={testDemand} compact /></div>
         </div>
       </div>
 

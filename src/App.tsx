@@ -1,6 +1,7 @@
 import { Sidebar } from './components/Sidebar';
 import { hashFor, useRoute } from './router';
 import { DataSourcesView } from './views/DataSourcesView';
+import { GuideView } from './views/GuideView';
 import { HomeView } from './views/HomeView';
 import { ImpactView } from './views/ImpactView';
 import { ItemView } from './views/ItemView';
@@ -19,6 +20,7 @@ export function App() {
     case 'item': view = <ItemView itemId={params.itemId} scenario={scenario} forecastOnly={forecastOnly} />; break;
     case 'playground': view = <PlaygroundView itemId={params.itemId} scenario={scenario} />; break;
     case 'impact': view = <ImpactView scenario={scenario} />; break;
+    case 'guide': view = <GuideView scenario={scenario} section={params.section} term={params.term} />; break;
     case 'sources': view = <DataSourcesView />; break;
     default: view = <p>Página no disponible. <a href={hashFor('/', scenario)}>Ir al inicio</a></p>;
   }

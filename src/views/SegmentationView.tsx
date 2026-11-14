@@ -3,6 +3,7 @@ import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAx
 import { FunnelBar } from '../components/charts/FunnelBar';
 import { SegmentMatrix } from '../components/charts/SegmentMatrix';
 import { AXIS_LABEL, SegmentRadar } from '../components/charts/SegmentRadar';
+import { HelpTip } from '../components/HelpTip';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { Money } from '../components/Money';
 import { LoadError, Loading, Pending } from '../components/StateViews';
@@ -129,9 +130,12 @@ export function SegmentationView({ scenario }: { scenario: Scenario }) {
           <SegmentMatrix data={data} selected={selected} onSelect={setSelected} />
         </div>
         <div className="card">
-          <h2>Perfil de segmentos (mediana normalizada)</h2>
+          <h2>Perfil de segmentos (mediana normalizada) <HelpTip id="mediana-normalizada" scenario={scenario} /></h2>
           <SegmentRadar data={data} selected={selected} />
-          <p className="small muted">1,0 = mediana global de los {fmtNumber(data.total_items)} artículos.</p>
+          <p className="small muted">
+            1,0 = mediana global del catálogo ({fmtNumber(data.total_items + data.excluded_no_xyz)} artículos; en CV, los{' '}
+            {fmtNumber(data.total_items)} con CV).
+          </p>
         </div>
         <div className="card">
           <h2>{selected} · al pasar el cursor</h2>
@@ -150,7 +154,7 @@ export function SegmentationView({ scenario }: { scenario: Scenario }) {
               onBlur={() => setHover(null)}
             >
               <div>
-                <div>{AXIS_LABEL[a] ?? a}</div>
+                <div>{AXIS_LABEL[a] ?? a} <HelpTip id={a} scenario={scenario} /></div>
                 <div className="raw">
                   {hover === a && profile[a] ? <>crudo: <RawValue axis={a} value={profile[a].median_raw} /></> : ' '}
                 </div>
