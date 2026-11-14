@@ -644,3 +644,18 @@ Pendiente para la próxima sesión. Antes de corregir, diagnosticar con datos re
 - [X] T111 [US5] En Impacto, la curva "Exceso frente a venta perdida según el nivel de servicio" tiene las etiquetas o leyendas superpuestas (src/components/charts/ImpactCurve.tsx: etiqueta del eje Y, leyenda, márgenes). Corregir.
 - [X] T113 [US3] Escala del eje Y de la gráfica de unidades (src/components/charts/UnitsBandChart.tsx): en algunos artículos no se ven las bandas ±3σ porque la escala se ajusta solo a la serie y las deja fuera. Probable causa: `domain={[0, 'auto']}` toma solo los datos de las líneas, y Recharts descarta las `ReferenceLine` que caen fuera del dominio. Calcular el dominio explícito como `[0, max(serie, band_upper, pronóstico, línea base, venta completada) × (1 + margen)]`, con un margen fijo (p. ej., 8 %) en una constante, y redondear las marcas. Verificar con un artículo de σ alta y otro de σ baja que se vean la serie, la media, +3σ, −3σ (o su rótulo en 0) y el pronóstico.
 - [X] T112 Correr `npm test`, `npm run build` y `pytest export/tests` y dejar al usuario los comandos para revisar.
+
+---
+
+## Phase 20: Módulo "Cómo usar", ayudas de variables y % de la demanda (2026-11-14)
+
+Pedido del usuario: un módulo de uso con el objetivo del proyecto, los módulos, recorridos guiados ("¿qué quieres ver?") y un glosario; un ícono "?" con la definición y la unidad de cada variable de la tarjeta de Segmentación (las mismas definiciones del glosario); y en Impacto, el ahorro como % de la demanda del año de test (21,86 M US$). Lo construido hasta la Fase 19 no se modifica, salvo lo que se indica.
+
+- [X] T114 Crear src/glossary.ts como fuente única de términos (`id`, `term`, `group`, `definition`, `unit`), con las definiciones de las variables del radar tomadas del nb 03 (Etapa 9.0, versión limpia) y los términos de serie, pronóstico, error e impacto de spec.md y research.md.
+- [X] T115 Crear src/components/HelpTip.tsx: botón "?" accesible (hover, foco y clic) con un globo que muestra la definición y la unidad, y el enlace "Ver en el glosario" a `#/guia/glosario/{id}`.
+- [X] T116 En src/views/SegmentationView.tsx, agregar `HelpTip` junto al nombre de cada eje en la tarjeta contigua, y corregir el pie del radar: la mediana global es la de los 3.049 artículos (en CV, los que tienen CV), no la de los 2.887.
+- [X] T117 Agregar la ruta `guide` (`#/guia`, `#/guia/glosario` y `#/guia/glosario/{id}`) en src/router.ts, el módulo "Cómo usar" en src/components/Sidebar.tsx (ícono de ayuda en src/components/Icons.tsx) y su vista en src/App.tsx.
+- [X] T118 Crear src/views/GuideView.tsx: objetivo del proyecto, datos y alcance, los 4 módulos con qué responden y cómo usarlos, el selector "¿Qué quieres ver?" con recorridos guiados paso a paso, y el glosario con búsqueda.
+- [X] T119 Crear src/components/GuideWalkthrough.tsx: pantalla esquemática animada (panel lateral y zonas del módulo) que resalta la zona de cada paso; anterior, siguiente, reproducción automática (respeta `prefers-reduced-motion`) y enlace "Ir ahí →" a la ruta real.
+- [X] T120 En src/views/ImpactView.tsx, agregar a las tarjetas "Exceso evitado" y "Venta recuperada" su % de la demanda del año de test (`meta.total_demand_test`, 21,86 M US$), con la demanda visible en la tarjeta.
+- [X] T121 Pruebas: rutas de la guía, glosario completo para los 5 ejes del radar, `HelpTip` en Segmentación y el % en Impacto (A: 15,0 % y 4,2 %); correr `npm test`, `npm run build` y `pytest export/tests`; anotar los cambios en plan.md y el contrato de rutas.

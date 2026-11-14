@@ -1,6 +1,6 @@
 # Pronóstico de reposición · resultados
 
-Sitio estático para la gerencia regional y de operaciones, con cuatro módulos:
+Sitio estático para la gerencia regional y de operaciones, con cinco módulos:
 
 - **Inicio**: portada con los 3.049 artículos analizados, los 517 con pronóstico y el exceso evitado.
 - **Segmentación**: matriz ABC × XYZ (2.887 artículos con clase XYZ), radar de perfiles, comparación
@@ -10,6 +10,9 @@ Sitio estático para la gerencia regional y de operaciones, con cuatro módulos:
   (seasonal naive), el error, el impacto y el playground.
 - **Impacto**: curvas de exceso frente a venta perdida según el nivel de servicio, por segmento y
   en total, en los escenarios A y B por separado.
+- **Cómo usar**: objetivo del proyecto, qué responde cada módulo, recorridos guiados ("¿Qué quieres
+  ver?") y glosario con la definición y la unidad de cada término. Las ayudas "?" de la interfaz
+  enlazan a él.
 
 Todo valor monetario está **a precio de venta, no es margen**. La capa visual sigue
 `diseno/guia_visual.md` y las pantallas `diseno/pantalla_*.png`.

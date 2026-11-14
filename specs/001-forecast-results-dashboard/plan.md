@@ -212,3 +212,13 @@ Sin violaciones de la constitución que justificar.
 | Signo del ahorro (T109) | Solo "el modelo cuesta X más" | Igual, más el contexto `ImpactContext`: en A, 490 de 517 ahorran y 27 cuestan más; en B, 374 y 143; y por qué (z fijo del 95 % del total) | Los datos son correctos (suma por artículo = total, signo = costo línea base − costo modelo). FOODS_1_024 (−169,74 US$ en A) es uno de los 27 |
 | Embudo (T106) | Barras alineadas a la izquierda, ancho lineal | Trapecios centrados con forma de embudo; ancho en escala logarítmica (34 %–100 %), rotulado | 517 es el 1,7 % de 30.490: en escala lineal la última etapa no se ve |
 | Curva de Impacto (T111) | Títulos de ejes y leyenda dentro del SVG, encimados | Leyenda arriba a la derecha, títulos de ejes en HTML y tooltip con z, servicio, exceso y venta perdida | Superposición reportada por el usuario |
+
+### Módulo "Cómo usar" (Fase 20, 2026-11-14)
+
+| Cambio | Antes | Ahora | Por qué |
+|---|---|---|---|
+| Módulo nuevo | 4 módulos | 5: "Cómo usar" en `#/guia` (objetivo, alcance, módulos, recorridos guiados y glosario) | Pedido del usuario: un manual de uso guiado |
+| Glosario | — | `src/glossary.ts`, fuente única para la guía y las ayudas "?"; variables del radar según el nb 03, Etapa 9.0 (versión limpia) | Que la definición de la tarjeta y la del glosario no puedan divergir |
+| Ayudas "?" | — | `HelpTip` junto a cada variable de la tarjeta de la celda y junto a "mediana normalizada"; se abre con cursor, foco o clic y enlaza al glosario | Pedido del usuario |
+| Pie del radar | "1,0 = mediana global de los 2.887 artículos" | "1,0 = mediana global del catálogo (3.049 artículos; en CV, los 2.887 con CV)" | Corrección: el nb 03 toma la mediana global sobre los 3.049 (comprobado: `spend` 25.378 = mediana de los 3.049, no de los 2.887) |
+| % de la demanda en Impacto | Solo "−77 %" (del exceso de la línea base) | Además "= 15,0 %" (exceso evitado) y "= 4,2 %" (venta recuperada) de la demanda del año de test, con la demanda (21,86 M US$) en la tarjeta Artículos | Pedido del usuario. Es el cociente de dos cifras exportadas (`headline` ÷ `meta.total_demand_test`), no un recálculo del impacto |

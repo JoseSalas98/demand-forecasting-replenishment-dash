@@ -7,7 +7,8 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
-import { legacyRedirect } from '../src/router';
+import { GLOSSARY_BY_ID } from '../src/glossary';
+import { legacyRedirect, parseHash } from '../src/router';
 
 const DATA = join(__dirname, '..', 'public', 'data');
 const hasData = existsSync(join(DATA, 'meta.json'));
@@ -37,7 +38,8 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function render(hash: string): Promise<string> {
+/** Renderiza la ruta; `inspect` recibe el DOM antes de desmontar. */
+async function render(hash: string, inspect?: (el: HTMLElement) => void): Promise<string> {
   window.location.hash = hash;
   const el = document.createElement('div');
   document.body.appendChild(el);
@@ -51,6 +53,7 @@ async function render(hash: string): Promise<string> {
     });
   }
   const text = el.textContent ?? '';
+  inspect?.(el);
   root.unmount();
   return text;
 }
@@ -60,6 +63,13 @@ describe('rutas', () => {
     expect(legacyRedirect('#/segmentos')).toBe('#/segmentacion');
     expect(legacyRedirect('#/segmentos/AX?esc=B')).toBe('#/segmentacion/AX?esc=B');
     expect(legacyRedirect('#/segmentacion')).toBeNull();
+  });
+
+  it('guía: #/guia, #/guia/glosario y #/guia/glosario/:term', () => {
+    expect(parseHash('#/guia').route).toBe('guide');
+    expect(parseHash('#/guia/glosario').params.section).toBe('glosario');
+    expect(parseHash('#/guia/glosario/cv?esc=B')).toMatchObject({ route: 'guide', params: { section: 'glosario', term: 'cv' }, scenario: 'B' });
+    expect(parseHash('#/guia/otra').route).toBe('notFound');
   });
 });
 
@@ -81,6 +91,21 @@ describe.skipIf(!hasData)('vistas con datos reales', () => {
     for (const n of ['207', '251', '134', '191', '229', '97', '517', '30.490']) expect(t).toContain(n);
     expect(t).toContain('Embudo: del catálogo a lo que se pronostica');
     expect(t).toContain('Ver artículos');
+  });
+
+  it('segmentación: ayuda "?" con definición y unidad en cada variable del radar', async () => {
+    const seg = JSON.parse(readFileSync(join(DATA, 'segmentation.json'), 'utf-8'));
+    for (const axis of seg.radar.axes) expect(GLOSSARY_BY_ID[axis]?.unit).toBeTruthy();
+    const t = await render('#/segmentacion?esc=A', (el) => {
+      const buttons = [...el.querySelectorAll<HTMLButtonElement>('.profile-row .help-btn')];
+      expect(buttons).toHaveLength(seg.radar.axes.length);
+      act(() => buttons[4].click());
+      const pop = el.querySelector('.help-pop')?.textContent ?? '';
+      expect(pop).toContain('Velocidad');
+      expect(pop).toContain('Unidad: unidades por día');
+      expect(pop).toContain('Ver en el glosario');
+    });
+    expect(t).toContain('mediana global del catálogo (3.049 artículos; en CV, los 2.887 con CV)');
   });
 
   it('#/segmentos redirige', async () => {
@@ -151,6 +176,29 @@ describe.skipIf(!hasData)('vistas con datos reales', () => {
     const t = await render('#/impacto?esc=A');
     for (const s of ['3,28 M US$', '0,91 M US$', '0,495', '0,748', '0,868', 'Mayor contribución (z fijo)']) expect(t).toContain(s);
     expect(t).not.toMatch(/impacto negativo/i);
+  });
+
+  it('impacto: ahorro como % de la demanda del año de test', async () => {
+    const a = await render('#/impacto?esc=A');
+    expect(a).toContain('= 15,0 % de la demanda del año de test');
+    expect(a).toContain('= 4,2 % de la demanda del año de test');
+    expect(a).toContain('Demanda del año de test: 21,86 M US$');
+    const b = await render('#/impacto?esc=B');
+    expect(b).toContain('= 4,6 % de la demanda del año de test');
+    expect(b).toContain('= 1,2 % de la demanda del año de test');
+  });
+
+  it('cómo usar: recorridos, módulos y glosario', async () => {
+    const t = await render('#/guia?esc=A', (el) => {
+      expect(el.querySelectorAll('.tour-zone').length).toBeGreaterThan(0);
+      const next = [...el.querySelectorAll<HTMLButtonElement>('.tour .btn')].find((b) => b.textContent?.includes('siguiente'));
+      act(() => next!.click());
+      expect(el.querySelector('.tour-text')?.textContent).toContain('Paso 2 de');
+    });
+    for (const s of ['¿Qué quieres ver?', 'Objetivo del proyecto', 'Los módulos', 'Glosario', 'Velocidad', 'WRMSSE', 'Venta completada', 'Paso 1 de']) {
+      expect(t).toContain(s);
+    }
+    expect(await render('#/guia/glosario/velocity')).toContain('unidades por día');
   });
 
   it('origen de los datos con pendientes', async () => {
