@@ -39,6 +39,14 @@ export const IconDollar = () => (
   </Svg>
 );
 
+export const IconHelp = () => (
+  <Svg>
+    <circle cx="12" cy="12" r="9.5" />
+    <path d="M9.4 9.3a2.7 2.7 0 0 1 5.2 1c0 1.8-2.6 2.4-2.6 4" />
+    <path d="M12 17.6h.01" />
+  </Svg>
+);
+
 export const IconData = () => (
   <Svg>
     <ellipse cx="12" cy="5.5" rx="7.5" ry="2.5" />

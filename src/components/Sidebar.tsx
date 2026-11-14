@@ -4,13 +4,14 @@ import { useData } from '../data';
 import { MONEY_LABEL } from '../format';
 import { hashFor, type RouteName } from '../router';
 import type { Meta, Scenario } from '../types';
-import { IconDollar, IconGrid, IconHome, IconPulse } from './Icons';
+import { IconDollar, IconGrid, IconHelp, IconHome, IconPulse } from './Icons';
 
 const MODULES: { key: string; label: string; path: string; routes: RouteName[]; Icon: ComponentType }[] = [
   { key: 'home', label: 'Inicio', path: '/', routes: ['home'], Icon: IconHome },
   { key: 'seg', label: 'Segmentación', path: '/segmentacion', routes: ['segmentation', 'segment'], Icon: IconGrid },
   { key: 'item', label: 'Artículo', path: '/articulo', routes: ['item', 'playground'], Icon: IconPulse },
   { key: 'impact', label: 'Impacto', path: '/impacto', routes: ['impact'], Icon: IconDollar },
+  { key: 'guide', label: 'Cómo usar', path: '/guia', routes: ['guide'], Icon: IconHelp },
 ];
 
 export function Sidebar({ route, scenario, itemId }: { route: RouteName; scenario: Scenario; itemId?: string }) {
