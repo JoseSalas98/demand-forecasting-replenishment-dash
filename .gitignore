@@ -20,3 +20,5 @@ Thumbs.db
 .vscode/
 .idea/
 # OJO: public/data/ NO se ignora: es la versión fijada (constitución I.5)
+# Metadatos de Windows al copiar archivos descargados (guardan la ruta de origen del equipo)
+*:Zone.Identifier
