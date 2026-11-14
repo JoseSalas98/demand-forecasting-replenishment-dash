@@ -140,19 +140,16 @@ function reducedMotion(): boolean {
 }
 
 export function GuideWalkthrough({ tour, scenario }: { tour: Tour; scenario: Scenario }) {
-  const [i, setI] = useState(0);
+  const [rawI, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [clicks, setClicks] = useState(0);
   const screenRef = useRef<HTMLDivElement>(null);
+  const last = tour.steps.length - 1;
+  // Nunca fuera de rango: si el recorrido cambia y tiene menos pasos, se queda en el último
+  const i = Math.min(Math.max(rawI, 0), last);
   const step = tour.steps[i];
   const layout = LAYOUT[step.screen];
-  const last = tour.steps.length - 1;
-
-  useEffect(() => {
-    setI(0);
-    setPlaying(false);
-  }, [tour.id]);
 
   const measure = useCallback(() => {
     const root = screenRef.current;

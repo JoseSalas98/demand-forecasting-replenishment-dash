@@ -86,7 +86,8 @@ export function GuideView({ scenario, section, term }: { scenario: Scenario; sec
             <Pill key={t.id} small active={t.id === tour.id} onClick={() => setTourId(t.id)}>{t.goal}</Pill>
           ))}
         </div>
-        <GuideWalkthrough tour={tour} scenario={scenario} />
+        {/* key: cada recorrido arranca en su paso 1 con estado propio */}
+        <GuideWalkthrough key={tour.id} tour={tour} scenario={scenario} />
       </section>
 
       <div className="grid-2 section">
