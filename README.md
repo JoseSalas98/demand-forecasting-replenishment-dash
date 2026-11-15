@@ -1,78 +1,149 @@
-# Pronóstico de reposición · resultados
+<div align="center">
 
-Sitio estático para la gerencia regional y de operaciones, con cinco módulos:
+# DDR Dashboard · Tablero de pronóstico de demanda
 
-- **Inicio**: portada con los 3.049 artículos analizados, los 517 con pronóstico y el exceso evitado.
-- **Segmentación**: matriz ABC × XYZ (2.887 artículos con clase XYZ), radar de perfiles, comparación
-  AX · AY · AZ, embudo y dinero en juego; detalle por segmento.
-- **Artículo**: historia de cualquiera de los 3.049 (unidades con media y bandas ±3σ, dinero, CV
-  descriptivo, histograma) y, para los 517, el pronóstico del año de test frente a la línea base
-  (seasonal naive), el error, el impacto y el playground.
-- **Impacto**: curvas de exceso frente a venta perdida según el nivel de servicio, por segmento y
-  en total, en los escenarios A y B por separado.
-- **Cómo usar**: objetivo del proyecto, qué responde cada módulo, recorridos guiados ("¿Qué quieres
-  ver?") y glosario con la definición y la unidad de cada término. Las ayudas "?" de la interfaz
-  enlazan a él.
+**Dashboard interactivo de pronóstico de demanda, inventario e impacto en dinero sobre M5 (Walmart)**<br>
+*Interactive demand forecasting, inventory and business-impact dashboard on Walmart's M5 dataset*
 
-Todo valor monetario está **a precio de venta, no es margen**. La capa visual sigue
-`diseno/guia_visual.md` y las pantallas `diseno/pantalla_*.png`.
+![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-222222?logo=githubpages&logoColor=white)
+![Dataset](https://img.shields.io/badge/dataset-M5%20Walmart-0071CE)
 
-Las reglas del proyecto están en `.specify/memory/constitution.md`; la especificación y el plan, en
-`specs/001-forecast-results-dashboard/`.
+**[Ver el tablero · Open the dashboard](https://<usuario>.github.io/<repositorio>/)**
 
-## Cómo funciona
+<!-- Imagen principal: guardar una captura del tablero en docs/img/hero.png y quitar este comentario.
+![DDR Dashboard](docs/img/hero.png)
+-->
 
-- `export/export_data.py` lee las salidas del proyecto de ciencia de datos (con `load_frozen`,
-  `load_tables` y `load_interim`), verifica invariantes, suma la venta diaria por bloque de 28 días
-  y escribe JSON en `public/data/`. **No recalcula** segmentación, pronóstico ni impacto. Si algo
-  falla, no escribe nada.
-- `public/data/` se versiona en Git: es la versión fijada de las cifras.
-- La interfaz (React + TypeScript + Vite) solo lee esos JSON.
+</div>
 
-## Requisitos
+---
 
-- El proyecto de datos con su `.venv` (Python 3.12) y sus salidas de nb 03, 03b, 05 y 06. La
-  matriz y el radar necesitan los artefactos congelados `segmentation_items` y `radar_profiles`
-  (nb 03, Etapa 10b); si faltan, la exportación los marca en `meta.pending` y la vista muestra
-  "No disponible". Las
-  dependencias de Python del exportador están en el grupo `front` de su `pyproject.toml`
-  (`numpy`, `pandas`, `pyarrow`, `pytest`). Para instalarlas sin quitar los otros grupos:
+## Contenido · Contents
 
-  ```bash
-  cd "$DATA_PROJECT_ROOT" && uv sync --group front --inexact
-  ```
-- Node 18.19 o más y npm.
-- Un `.env` en la raíz (copie `.env.example`):
+1. [El problema · The problem](#el-problema--the-problem)
+2. [Módulos · Modules](#módulos--modules)
+3. [Cómo se alimenta · How it is fed](#cómo-se-alimenta--how-it-is-fed)
+4. [Reglas de la casa · House rules](#reglas-de-la-casa--house-rules)
+5. [Estructura · Repository structure](#estructura--repository-structure)
+6. [Cómo reproducirlo · Getting started](#cómo-reproducirlo--getting-started)
+7. [Hoja de ruta · Roadmap](#hoja-de-ruta--roadmap)
+8. [Proyecto hermano · Sister project](#proyecto-hermano--sister-project)
+9. [Autor y licencia · Author & license](#autor-y-licencia--author--license)
 
-  ```text
-  DATA_PROJECT_ROOT=/ruta/absoluta/al/proyecto/de/datos
-  EXPORT_DIR=public/data
-  ```
+---
 
-## Exportar
+## El problema · The problem
 
-```bash
-"$DATA_PROJECT_ROOT/.venv/bin/python" export/export_data.py
+Un modelo de pronóstico que vive en un notebook tiene la misma influencia sobre el inventario que un horóscopo guardado en un cajón. El gerente que decide cuánto reponer no abre notebooks, no lee WRMSSE y no tiene por qué hacerlo. Necesita ver, en un solo lugar y con la cabeza fría, qué productos sostienen el negocio, cómo se han comportado y cuánto cuesta equivocarse.
+
+> **EN.** A forecasting model that lives in a notebook has as much influence on inventory as a horoscope kept in a drawer. The manager deciding how much to reorder does not open notebooks, does not read WRMSSE, and should not have to. What is needed is one place to see, calmly, which products carry the business, how they have behaved, and what being wrong costs.
+
+**DDR Dashboard** es el tablero de **pronóstico de demanda** (*demand forecasting dashboard*) que pone en pantalla los resultados de [Demand Driven Replenishment](https://github.com/<usuario>/<repositorio-modelo>): la segmentación ABC × XYZ de 3.049 productos de Walmart, la historia de ventas de cada uno, el pronóstico de los 517 productos clave frente a la línea base y el impacto en dinero sobre el **inventario** y el **abastecimiento**. Está pensado para la gerencia regional y la de operaciones.
+
+> **EN.** **DDR Dashboard** is the **demand forecasting dashboard** that puts the results of [Demand Driven Replenishment](https://github.com/<usuario>/<repositorio-modelo>) on screen: the ABC × XYZ segmentation of 3,049 Walmart products, each product's sales history, the forecast for the 517 key products against the baseline, and the money impact on **inventory** and **supply chain** decisions. It is built for regional and operations managers.
+
+La meta: que la conversación sobre reposición pase de "el año pasado vendimos esto" a "con este nivel de servicio, esto es lo que dejamos de perder y lo que dejamos de acumular". Todo el tablero recorre el año de test, bloque a bloque, como si las decisiones se hubieran tomado en su momento.
+
+> **EN.** The goal: to move the replenishment conversation from "this is what we sold last year" to "at this service level, this is the sales loss we avoid and the stock we stop piling up". The whole dashboard replays the test year, block by block, as if each decision had been made at the time.
+
+---
+
+## Módulos · Modules
+
+| Módulo · Module | Qué responde | What it answers |
+|---|---|---|
+| **Inicio** · *Home* | ¿De qué tamaño es el problema? | How big is the problem? |
+| **Segmentación** · *Segmentation* | ¿Qué productos sostienen el ingreso y cuáles venden de forma estable? Matriz ABC × XYZ, radar de perfiles y embudo de 3.049 a 517. | Which products carry the revenue and which sell steadily? ABC × XYZ matrix, profile radar and the 3,049 → 517 funnel. |
+| **Artículo** · *Product* | ¿Cómo se ha comportado este producto? Unidades y dinero por bloque de 28 días, bandas de ±3σ, distribución y, si aplica, el pronóstico frente a la línea base. | How has this product behaved? Units and money per 28-day block, ±3σ bands, distribution and, when available, the forecast against the baseline. |
+| **Impacto** · *Impact* | ¿Cuánto cuesta equivocarse? Venta perdida frente a inventario en exceso según el nivel de servicio, por segmento y por producto. | What does being wrong cost? Lost sales vs. excess inventory by service level, per segment and per product. |
+
+Un adelanto: con la misma disponibilidad del 95 %, el inventario en exceso cae un 77 % frente a repetir el año anterior. El resto de la historia está en el módulo de impacto.
+
+> **EN.** A sneak peek: at the same 95% service level, excess inventory drops 77% versus repeating last year. The rest of the story is in the impact module.
+
+---
+
+## Cómo se alimenta · How it is fed
+
+```mermaid
+flowchart LR
+    A[(Salidas del modelo DDR<br>DDR model outputs)] --> B[Exporte en Python<br>Python export]
+    B --> C[(JSON versionados<br>Versioned JSON)]
+    C --> D[React + TypeScript]
+    D --> E[GitHub Pages]
 ```
 
-## Probar
+
+---
+
+## Reglas de la casa · House rules
+
+- **El tablero muestra, no recalcula.** Segmentación, pronóstico e impacto se leen tal cual del modelo. *The dashboard displays; it does not recompute.*
+- **Escenarios separados.** El pronóstico a un paso (A) y el encadenado (B) nunca comparten una cifra. *Scenario A (one-step) and scenario B (chained) never share a number.*
+- **Precio de venta, no margen.** Todo valor en dinero lo dice. *Every money figure is at sale price and says so: it is not margin.*
+- **Pronóstico para quien lo tiene.** Los 3.049 productos tienen historia; solo los 517 modelados tienen pronóstico. El resto recibe un aviso honesto y un enlace al embudo. *All 3,049 products have history; only the 517 modeled ones have a forecast. The rest get an honest notice and a link to the funnel.*
+- **Un dato ausente se dice.** Se muestra como "no disponible", nunca como cero. *A missing value says so: "not available", never zero.*
+
+---
+
+## Estructura · Repository structure
+
+```
+.
+├── docs/
+│   ├── diseno/                  # Guía visual y pantallas · Visual guide and screens
+│   └── mapa_flujo_datos.md      # Contrato con las salidas del modelo · Data contract
+├── export/                      # Exportación en Python · Python export script
+├── public/
+│   └── data/                    # JSON exportados y versionados · Exported, versioned JSON
+├── src/                         # Aplicación React + TypeScript · React + TypeScript app
+├── .env.example                 # DATA_PROJECT_ROOT
+├── LICENSE
+├── package.json
+└── README.md
+```
+
+---
+
+## Cómo reproducirlo · Getting started
+
+**1. Exportar los datos · Export the data.** Requiere una copia local del proyecto DDR con sus salidas generadas. *Requires a local copy of the DDR project with its outputs already generated.*
 
 ```bash
-"$DATA_PROJECT_ROOT/.venv/bin/python" -m pytest export/tests   # invariantes de las cifras
+cp .env.example .env            # Definir DATA_PROJECT_ROOT · Set DATA_PROJECT_ROOT
+python export/export.py         # Escribe los JSON en public/data · Writes JSON to public/data
+```
+
+**2. Correr el tablero · Run the dashboard.**
+
+```bash
 npm install
-npm test                                                         # formato y vistas con datos reales
+npm run dev
 ```
 
-## Ver
+**3. Publicar · Deploy.** Cada push a la rama principal publica el sitio en GitHub Pages. *Every push to the main branch deploys the site to GitHub Pages.*
 
-```bash
-npm run dev                         # http://localhost:5173
-npm run build && npm run preview    # igual a lo que se publica (agregue -- --host en WSL)
-```
+---
 
-## Publicar
+## Hoja de ruta · Roadmap
 
-1. Cree un repositorio **público** en GitHub y súbalo (`git push -u origin main`).
-2. En *Settings → Pages*, elija la fuente **GitHub Actions**.
-3. Cada push a `main` construye y publica (`.github/workflows/deploy.yml`). El CI no exporta: usa
-   los JSON versionados. Para actualizar cifras, exporte localmente y haga commit de `public/data/`.
+- [ ] Vistas con pronóstico por tienda y por región · *Store- and region-level forecast views*
+- [ ] Pronóstico hacia adelante, más allá del año de test · *Forward-looking forecasts beyond the test year*
+- [ ] Productos fuera de la segmentación objetivo · *Products outside the target segments*
+
+---
+
+## Proyecto hermano · Sister project
+
+**[Demand Driven Replenishment](https://github.com/<usuario>/<repositorio-modelo>)**: el modelo, el análisis y los hallazgos detrás de cada cifra de este tablero. *The model, analysis and findings behind every number on this dashboard.*
+
+---
+
+## Autor y licencia · Author & license
+
+**José Gregorio Salas Bolívar** · Data scientist
+
+Licencia: ver [LICENSE](LICENSE). · *License: see [LICENSE](LICENSE).*
