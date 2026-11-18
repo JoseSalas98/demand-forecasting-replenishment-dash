@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { UnitsBandChart } from '../components/charts/UnitsBandChart';
+import { fmtDate } from '../components/charts/ArticleChart';
 import { ImpactContext } from '../components/ImpactContext';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { Money } from '../components/Money';
-import { SCENARIO_LABEL, ScenarioPills } from '../components/Pill';
 import { Saving } from '../components/Saving';
 import { LoadError, Loading } from '../components/StateViews';
 import { useData } from '../data';
@@ -23,7 +23,7 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
   const series = useData<ItemSeries>(item ? `series/${item.item_id}.json` : null);
   const descriptive = useData<Descriptive>(item ? `descriptive/${item.item_id}.json` : null);
   const [step, setStep] = useState(1);
-  useEffect(() => setStep(1), [scenario, itemId]); // cambiar de escenario reinicia
+  useEffect(() => setStep(1), [scenario, itemId]); // cambiar de artículo reinicia
   const startDates = useMemo(
     () => new Map(meta.status === 'ready' ? meta.data.blocks.map((b) => [b.block, b.start_date] as [number, string]) : []),
     [meta],
@@ -51,20 +51,18 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
 
   return (
     <>
-      <p className="small"><a href={hashFor(`/articulo/${item.item_id}`, scenario)}>← {item.item_id}</a></p>
+      <p><a className="btn small" href={hashFor(`/articulo/${item.item_id}/detalle`, scenario)}><span aria-hidden="true">←</span> Volver al detalle de {item.item_id}</a></p>
       <ModuleHeader
-        title={`Playground · ${item.item_id}`}
-        subtitle={<>Reproduce el año de test bloque a bloque · escenario <span className="scenario-badge">{SCENARIO_LABEL[scenario]}</span></>}
-      >
-        <ScenarioPills scenario={scenario} />
-      </ModuleHeader>
+        title={`Año de prueba paso a paso · ${item.item_id}`}
+        subtitle="Reproduce el año de prueba periodo a periodo"
+      />
       <div className="controls">
         <button className="btn" onClick={() => setStep(1)} disabled={step === 1}>Reiniciar</button>
         <button className="btn" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}>◀ anterior</button>
         <button className="btn" onClick={() => setStep(Math.min(n, step + 1))} disabled={step === n}>siguiente ▶</button>
         <button className="btn" onClick={() => setStep(n)} disabled={step === n}>Ver el año completo</button>
         <strong>Paso {step} de {n}</strong>
-        {current && <span className="muted">bloque {current.block} · inicia {startDates.get(current.block) ?? '—'}</span>}
+        {current && <span className="muted">periodo {current.block} · inicia {fmtDate(startDates.get(current.block))}</span>}
       </div>
       <div className="card">
         <UnitsBandChart
@@ -73,16 +71,16 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
           startDates={startDates}
         />
         <p className="small muted">
-          Misma gráfica que la ficha del artículo. La venta observada es la registrada; la completada trata los quiebres de stock y es
-          contra la que se evalúa el pronóstico.
+          Lo que se vendió es lo registrado; la venta sin faltantes estima lo que se habría vendido con producto disponible y es contra la que
+          se mide el pronóstico.
         </p>
       </div>
       <div className="table-wrap section">
         <table>
           <thead>
             <tr>
-              <th>Paso</th><th>Bloque</th><th>Venta observada</th><th>Venta completada</th><th>Pronóstico {scenario}</th><th>Línea base</th>
-              <th>Acum. venta completada</th><th>Acum. pronóstico</th><th>Acum. línea base</th>
+              <th>Paso</th><th>Periodo</th><th>Lo que se vendió</th><th>Venta sin faltantes</th><th>Pronóstico</th><th>Línea base</th>
+              <th>Acum. venta sin faltantes</th><th>Acum. pronóstico</th><th>Acum. línea base</th>
             </tr>
           </thead>
           <tbody>
@@ -96,21 +94,21 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
           </tbody>
         </table>
       </div>
-      <p className="small muted">Unidades. El impacto en dinero existe solo para el año completo, no por bloque.</p>
+      <p className="small muted">Unidades. El impacto en dinero existe solo para el año completo, no por periodo.</p>
       {step === n && (
         <div className="card section">
-          <h2>Resultado del año · {SCENARIO_LABEL[scenario]}</h2>
+          <h2>Resultado del año</h2>
           <div className="grid-2">
             <div>
-              <div className="label">Ahorro frente a no hacer nada (z fijo)</div>
+              <div className="label">Ahorro frente a la línea base (colchón fijo)</div>
               <div>{imp.impact < 0 ? 'En este artículo ' : ''}<Saving value={imp.impact} /></div>
             </div>
             <div className="small">
-              <div>Venta perdida: modelo <Money value={imp.lost_model} compact /> · línea base <Money value={imp.lost_naive} compact /></div>
-              <div>Exceso: modelo <Money value={imp.excess_model} compact /> · línea base <Money value={imp.excess_naive} compact /></div>
+              <div>Ventas perdidas: pronóstico <Money value={imp.lost_model} /> · línea base <Money value={imp.lost_naive} /></div>
+              <div>Mercancía sobrante: pronóstico <Money value={imp.excess_model} /> · línea base <Money value={imp.excess_naive} /></div>
             </div>
           </div>
-          {segs.status === 'ready' && <ImpactContext impact={imp} concentration={segs.data.concentration[scenario]} scenario={scenario} />}
+          {segs.status === 'ready' && <ImpactContext impact={imp} concentration={segs.data.concentration[scenario]} />}
         </div>
       )}
     </>

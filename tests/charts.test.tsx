@@ -6,7 +6,8 @@ import { join } from 'node:path';
 import { act, cloneElement, type ReactElement } from 'react';
 import { createRoot } from 'react-dom/client';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { funnelWidths } from '../src/components/charts/FunnelBar';
+import { ArticleChart, tickLabel } from '../src/components/charts/ArticleChart';
+import { bubbleLayout } from '../src/components/charts/Bubbles';
 import { niceMax, UnitsBandChart } from '../src/components/charts/UnitsBandChart';
 
 vi.mock('recharts', async (orig) => {
@@ -38,10 +39,11 @@ describe('escalas', () => {
     expect(niceMax([1466.5, 556])).toBe(1600);
     expect(niceMax([null, undefined])).toBe(1);
   });
-  it('el embudo se angosta etapa a etapa', () => {
-    const w = funnelWidths([30490, 3049, 592, 517]);
-    expect(w[0]).toBe(100);
-    for (let i = 1; i < w.length; i++) expect(w[i]).toBeLessThan(w[i - 1]);
+  it('eje de unidades: unidades sueltas en escalas pequeñas y miles en las grandes', () => {
+    expect(tickLabel(0, 400)).toBe('0');
+    expect(tickLabel(100, 400)).toBe('100');
+    expect(tickLabel(12500, 50000)).toBe('12,5 mil');
+    expect(tickLabel(25000, 50000)).toBe('25 mil');
   });
 });
 
@@ -51,8 +53,8 @@ describe.skipIf(!hasData)('UnitsBandChart con datos reales', () => {
     const s = read('series/FOODS_3_655.json');
     const h = await draw(<UnitsBandChart data={d} test={{ from: 53, to: 65, rows: s.rows, scenario: 'A' }} />);
     expect(h.querySelectorAll('.recharts-line path.recharts-curve').length).toBe(4);
-    expect(legend(h)).toEqual(['Venta observada', 'Venta completada (quiebres tratados)', 'Pronóstico A · a un paso', 'Línea base (repetir el año anterior)']);
-    expect(h.textContent).toContain('Test (13 bloques)');
+    expect(legend(h)).toEqual(['Lo que se vendió', 'Venta sin faltantes (estimada)', 'Pronóstico', 'Línea base']);
+    expect(h.textContent).toContain('Año de prueba (13 periodos)');
     expect(h.textContent).toContain('+3σ');
   });
 
@@ -65,5 +67,42 @@ describe.skipIf(!hasData)('UnitsBandChart con datos reales', () => {
       expect(labels).toContain('media');
       expect(labels.some((l) => l?.startsWith('−3σ'))).toBe(true);
     }
+  });
+});
+
+describe.skipIf(!hasData)('burbujas de segmentos', () => {
+  for (const mode of ['spend', 'n'] as const) {
+    it(`(${mode}) las familias no se enciman y cada grupo queda dentro de su familia y del lienzo`, () => {
+      const placed = bubbleLayout(read('segmentation.json').matrix, mode);
+      expect(placed.map((p) => p.family)).toEqual(['A', 'B', 'C']);
+      for (let i = 0; i < 3; i++) {
+        const a = placed[i];
+        expect(a.cx - a.R).toBeGreaterThanOrEqual(0);
+        expect(a.cx + a.R).toBeLessThanOrEqual(760);
+        for (const c of a.cells) expect(Math.hypot(c.x - a.cx, c.y - a.cy) + c.r).toBeLessThanOrEqual(a.R + 0.01);
+        for (let j = i + 1; j < 3; j++) {
+          const b = placed[j];
+          expect(Math.hypot(a.cx - b.cx, a.cy - b.cy)).toBeGreaterThanOrEqual(a.R + b.R);
+        }
+      }
+    });
+  }
+});
+
+describe.skipIf(!hasData)('ArticleChart con datos reales', () => {
+  it('FOODS_3_090: cuatro series, franja del año de prueba y leyenda que se puede apagar', async () => {
+    const d = read('descriptive/FOODS_3_090.json');
+    const s = read('series/FOODS_3_090.json');
+    const byBlock = new Map(s.rows.map((r: { block: number }) => [r.block, r]));
+    const rows = d.rows.map((r: { block: number; units_observed: number }) => {
+      const x = byBlock.get(r.block) as { units_completed: number; forecast: { A: number } | null; baseline: number | null } | undefined;
+      return { block: r.block, observed: r.units_observed, completed: x?.units_completed ?? null, forecast: x?.forecast?.A ?? null, baseline: x?.baseline ?? null };
+    });
+    const h = await draw(<ArticleChart rows={rows} test={{ from: 53, to: 65 }} stats={d.stats} startDates={new Map()} />);
+    const chips = [...h.querySelectorAll<HTMLButtonElement>('.lg')];
+    expect(chips.map((c) => c.textContent)).toEqual(['Lo que se vendió', 'Venta sin faltantes (estimada)', 'Pronóstico', 'Línea base', 'Media y ±3σ']);
+    expect(h.querySelector('.test-shade')).not.toBeNull();
+    await act(async () => chips[3].click());
+    expect(h.querySelectorAll<HTMLButtonElement>('.lg')[3].getAttribute('aria-pressed')).toBe('false');
   });
 });

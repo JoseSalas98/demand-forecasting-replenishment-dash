@@ -25,6 +25,13 @@ const SERIES: { key: Key; name: string; color: string; dash?: string; width: num
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 /** "25 may 2015" a partir de "2015-05-25". */
+/** Etiqueta del eje Y: unidades sueltas si la escala es pequeña; miles si no. */
+export function tickLabel(v: number, max: number): string {
+  if (!v) return '0';
+  if (max < 2000) return fmtNumber(v, v % 1 ? 1 : 0);
+  return `${fmtNumber(v / 1000, v % 1000 ? 1 : 0)} mil`;
+}
+
 export function fmtDate(iso: string | undefined): string {
   if (!iso) return 'fecha no disponible';
   const [y, m, d] = iso.split('-').map(Number);
@@ -106,7 +113,7 @@ export function ArticleChart({ rows, test, stats, startDates }: {
           {yTicks.map((v) => (
             <g key={v}>
               <line x1={m.l} x2={W - m.r} y1={Y(v)} y2={Y(v)} stroke={COLOR.border} />
-              <text x={m.l - 8} y={Y(v) + 4} textAnchor="end" className="tick">{v ? `${fmtNumber(v / 1000, v < 10000 ? 1 : 0)} mil` : '0'}</text>
+              <text x={m.l - 8} y={Y(v) + 4} textAnchor="end" className="tick">{tickLabel(v, yMax)}</text>
             </g>
           ))}
           {xTicks.map(([b, l]) => <text key={b} x={X(b)} y={H - m.b + 18} textAnchor="middle" className="tick">{l}</text>)}

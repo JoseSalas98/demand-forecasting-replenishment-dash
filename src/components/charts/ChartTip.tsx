@@ -4,6 +4,8 @@ import { useCallback, useRef, useState, type MouseEvent, type ReactNode } from '
 export interface TipState {
   x: number;
   y: number;
+  /** Alto del contenedor: en la mitad inferior el recuadro se abre hacia arriba. */
+  h: number;
   content: ReactNode;
 }
 
@@ -14,7 +16,7 @@ export function useChartTip() {
   const show = useCallback((e: MouseEvent, content: ReactNode) => {
     const r = box.current?.getBoundingClientRect();
     if (!r) return;
-    setTip({ x: e.clientX - r.left, y: e.clientY - r.top, content });
+    setTip({ x: e.clientX - r.left, y: e.clientY - r.top, h: r.height, content });
   }, []);
   const hide = useCallback(() => setTip(null), []);
   return { box, tip, show, hide };
@@ -25,7 +27,11 @@ export function ChartTip({ tip, width }: { tip: TipState | null; width: number }
   const W = 300;
   const left = tip.x + 16 + W > width ? Math.max(8, tip.x - W - 16) : tip.x + 16;
   return (
-    <div className="chart-tip" role="tooltip" style={{ left, top: Math.max(8, tip.y + 12) }}>
+    <div
+      className="chart-tip"
+      role="tooltip"
+      style={tip.y > tip.h / 2 ? { left, bottom: Math.max(8, tip.h - tip.y + 12) } : { left, top: Math.max(8, tip.y + 12) }}
+    >
       {tip.content}
     </div>
   );

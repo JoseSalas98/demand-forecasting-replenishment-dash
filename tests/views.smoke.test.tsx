@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Prueba de humo: cada vista se renderiza con los JSON reales de public/data, sin errores,
-// con el rótulo de dinero y sin la expresión "impacto negativo".
+// Prueba de humo (spec 002): cada vista se renderiza con los JSON reales de public/data, sin errores,
+// con la etiqueta global de dinero, en lenguaje de gerencia y sin mencionar el método del pronóstico.
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { act } from 'react';
@@ -65,6 +65,10 @@ describe('rutas', () => {
     expect(legacyRedirect('#/segmentacion')).toBeNull();
   });
 
+  it('detalle del artículo: #/articulo/:id/detalle', () => {
+    expect(parseHash('#/articulo/FOODS_1_004/detalle')).toMatchObject({ route: 'itemDetail', params: { itemId: 'FOODS_1_004' } });
+  });
+
   it('guía: #/guia, #/guia/glosario y #/guia/glosario/:term', () => {
     expect(parseHash('#/guia').route).toBe('guide');
     expect(parseHash('#/guia/glosario').params.section).toBe('glosario');
@@ -74,147 +78,149 @@ describe('rutas', () => {
 });
 
 describe.skipIf(!hasData)('vistas con datos reales', () => {
-  it('inicio: 3.049, 517 y exceso evitado de A', async () => {
+  // Nada del método ni de escenarios llega a la pantalla (FR-002)
+  const clean = (t: string) => {
+    expect(t).not.toMatch(/a un paso|encadenado|escenario|impacto negativo/i);
+    expect(t).toContain('Cifras a precio de venta · no es margen');
+  };
+
+  it('inicio: solo bienvenida y botón a Segmentos', async () => {
     const t = await render('#/');
-    expect(t).toContain('Demand Driven Replenishment');
-    expect(t).toContain('3.049');
-    expect(t).toContain('517');
-    expect(t).toContain('3,28 M US$');
-    expect(t).toContain('Explorar');
-    expect(t).toContain('a precio de venta, no es margen');
+    clean(t);
+    expect(t).toContain('Reposición guiada');
+    expect(t).toContain('Walmart · 10 tiendas · 2011–2016');
+    expect(t).toContain('Explorar los segmentos');
   });
 
-  it('segmentación: matriz de 2.887, embudo y comparación', async () => {
-    const t = await render('#/segmentacion?esc=A');
-    expect(t).toContain('2.887');
-    expect(t).toContain('162 sin clase XYZ no se incluyen');
-    for (const n of ['207', '251', '134', '191', '229', '97', '517', '30.490']) expect(t).toContain(n);
-    expect(t).toContain('Embudo: del catálogo a lo que se pronostica');
-    expect(t).toContain('Ver artículos');
+  it('segmentos: burbujas con nombres, panel del grupo y embudo con cifras', async () => {
+    const t = await render('#/segmentacion', (el) => {
+      expect(el.querySelectorAll('.bub')).toHaveLength(9);
+      expect(el.querySelectorAll('.halo')).toHaveLength(3);
+    });
+    clean(t);
+    for (const s of ['Vitales', 'Útiles', 'Complementarios', 'continuos', 'recurrentes', 'ocasionales']) expect(t).toContain(s);
+    expect(t).toContain('Vitales continuos');
+    expect(t).toContain('Con pronóstico: 191 de 207');
+    expect(t).toContain('162 artículos sin clase de regularidad');
+    for (const n of ['30.490', '3.049', '592', '517', '52 %', '21,86 M US$', '75']) expect(t).toContain(n);
   });
 
-  it('segmentación: ayuda "?" con definición y unidad en cada variable del radar', async () => {
+  it('segmentos: clic en una burbuja cambia el panel', async () => {
+    await render('#/segmentacion', (el) => {
+      const az = [...el.querySelectorAll<SVGGElement>('.bub')].find((b) => b.getAttribute('aria-label')?.startsWith('Vitales ocasionales'));
+      act(() => az!.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+      expect(el.querySelector('.panel h2')?.textContent).toContain('Vitales ocasionales');
+    });
+  });
+
+  it('segmentos: ayuda "?" en cada barra con definición y valor en unidades', async () => {
     const seg = JSON.parse(readFileSync(join(DATA, 'segmentation.json'), 'utf-8'));
     for (const axis of seg.radar.axes) expect(GLOSSARY_BY_ID[axis]?.unit).toBeTruthy();
-    const t = await render('#/segmentacion?esc=A', (el) => {
-      const buttons = [...el.querySelectorAll<HTMLButtonElement>('.profile-row .help-btn')];
+    await render('#/segmentacion', (el) => {
+      const buttons = [...el.querySelectorAll<HTMLButtonElement>('.hbars .help-btn')];
       expect(buttons).toHaveLength(seg.radar.axes.length);
       act(() => buttons[4].click());
       const pop = el.querySelector('.help-pop')?.textContent ?? '';
-      expect(pop).toContain('Velocidad');
-      expect(pop).toContain('Unidad: unidades por día');
-      expect(pop).toContain('Ver en el glosario');
+      expect(pop).toContain('Unidades por día');
+      expect(pop).toContain('u. por día');
     });
-    expect(t).toContain('mediana global del catálogo (3.049 artículos; en CV, los 2.887 con CV)');
   });
 
   it('#/segmentos redirige', async () => {
-    const t = await render('#/segmentos?esc=A');
-    expect(t).toContain('Segmentación ABC × XYZ');
+    expect(await render('#/segmentos')).toContain('Segmentos del catálogo');
   });
 
-  it('detalle de segmento AX y total', async () => {
-    expect(await render('#/segmentacion/AX?esc=A')).toContain('Segmento AX');
-    expect(await render('#/segmentacion/total?esc=A')).toContain('490 de 517');
+  it('detalle de los grupos con pronóstico', async () => {
+    const t = await render('#/segmentacion/AX');
+    clean(t);
+    expect(t).toContain('Comparación de los tres grupos');
+    for (const s of ['191', '229', '97', '517', '0,495', '0,868']) expect(t).toContain(s);
+    expect(t).toContain('Artículos de Vitales continuos · 191');
+    expect(await render('#/segmentacion/total')).toContain('Detalle no disponible');
   });
 
-  it('artículo sin id pide elegir', async () => {
-    expect(await render('#/articulo')).toContain('Elige un artículo');
+  it('artículo sin id abre uno por defecto', async () => {
+    expect(await render('#/articulo')).toContain('Artículo FOODS_3_090');
   });
 
-  it('FOODS_3_655 (A): pronóstico, métricas y bandas', async () => {
-    const t = await render('#/articulo/FOODS_3_655?esc=A');
-    expect(t).toContain('RMSSE · 1 paso');
-    expect(t).toContain('RMSSE · cadena');
-    expect(t).toContain('Coeficiente de variación');
-    expect(t).toContain('bandas = media ± 3σ');
-    expect(t).not.toContain('no entró al pronóstico');
+  it('FOODS_1_004: frase de acierto, gráfica con pronóstico y línea base, ahorro', async () => {
+    const t = await render('#/articulo/FOODS_1_004', (el) => {
+      expect([...el.querySelectorAll('.lg')].map((c) => c.textContent)).toContain('Línea base');
+    });
+    clean(t);
+    expect(t).toContain('acertó 86 de cada 100 unidades');
+    expect(t).toContain('Detalle del pronóstico');
+    expect(t).toContain('habría ahorrado 12 mil US$');
+    expect(t).toContain('ahorro neto en el año');
   });
 
-  it('FOODS_1_004 (A): test 53–65, ahorro y z fijo', async () => {
-    const t = await render('#/articulo/FOODS_1_004?esc=A');
-    expect(t).toContain('bloques 53–65');
-    expect(t).toContain('11.558,54 US$');
-    expect(t).toContain('−0,012');
-    expect(t).toContain('no disponible por artículo');
-    expect(t).not.toMatch(/impacto negativo/i);
+  it('FOODS_1_004 detalle: cálculo del ahorro, WAPE de la línea base derivado y z fijo', async () => {
+    const t = await render('#/articulo/FOODS_1_004/detalle');
+    clean(t);
+    expect(t).toContain('periodos 53–65');
+    expect(t).toContain('11.559 US$');
+    expect(t).toContain('−0,01');
+    expect(t).toContain('17,9 % *');
+    expect(t).toContain('calculado en el sitio');
+    expect(t).toContain('Exportar CSV');
   });
 
-  it('artículo con ahorro negativo usa el rótulo correcto', async () => {
-    const t = await render('#/articulo/FOODS_1_012?esc=A');
-    expect(t).toContain('cuesta');
-    expect(t).toContain('más que repetir el año anterior');
-    // Contexto: es uno de los 27 de 517 que cuestan más en A
-    expect(t).toContain('490 de 517 artículos ahorran');
-    expect(t).toContain('este es uno de ellos');
+  it('artículo que cuesta más con el pronóstico', async () => {
+    const t = await render('#/articulo/FOODS_1_012');
+    expect(t).toMatch(/habría costado .+ más que la línea base/);
+    expect(t).toContain('costo adicional neto');
+    expect(await render('#/articulo/FOODS_1_012/detalle')).toContain('490 de 517 artículos ahorran');
   });
 
-  it('HOUSEHOLD_1_366: test 51–63', async () => {
-    expect(await render('#/articulo/HOUSEHOLD_1_366?esc=B')).toContain('bloques 51–63');
+  it('HOUSEHOLD_1_366: año de prueba 51–63', async () => {
+    expect(await render('#/articulo/HOUSEHOLD_1_366/detalle')).toContain('periodos 51–63');
   });
 
   it('artículo fuera de los 517: historia sin pronóstico', async () => {
-    const t = await render('#/articulo/FOODS_1_001?esc=A&pron=0');
+    const t = await render('#/articulo/FOODS_1_001?pron=0');
     expect(t).toContain('Este artículo no entró al pronóstico');
-    expect(t).toContain('Coeficiente de variación');
-    expect(t).not.toContain('RMSSE');
+    expect(t).toContain('Ver el embudo');
+    expect(t).not.toContain('Detalle del pronóstico');
   });
 
   it('artículo fuera del catálogo', async () => {
-    expect(await render('#/articulo/NO_EXISTE_1?esc=A')).toContain('no está en el catálogo de 3.049');
+    expect(await render('#/articulo/NO_EXISTE_1')).toContain('no está en el catálogo de 3.049');
   });
 
-  it('playground', async () => {
-    const t = await render('#/articulo/FOODS_1_004/playground?esc=B');
+  it('año de prueba paso a paso', async () => {
+    const t = await render('#/articulo/FOODS_1_004/playground');
+    clean(t);
     expect(t).toContain('Paso 1 de 13');
-    // Mismas columnas que la ficha: observada y completada
-    expect(t).toContain('Venta observada');
-    expect(t).toContain('Venta completada');
+    expect(t).toContain('Lo que se vendió');
+    expect(t).toContain('Venta sin faltantes');
   });
 
-  it('impacto (A): manifiesto y WRMSSE por separado', async () => {
-    const t = await render('#/impacto?esc=A');
-    for (const s of ['3,28 M US$', '0,91 M US$', '0,495', '0,748', '0,868', 'Mayor contribución (z fijo)']) expect(t).toContain(s);
-    expect(t).not.toMatch(/impacto negativo/i);
+  it('impacto al 95 %: cifras oficiales en las dos palancas y reparto por grupo', async () => {
+    const t = await render('#/impacto');
+    clean(t);
+    for (const s of ['Liberar capital', 'Recuperar ventas', '3,28 M US$', '0,91 M US$', '0,55 M US$', '1,33 M US$', '1,40 M US$', '490', '27']) expect(t).toContain(s);
+    expect(t).toContain('Los 10 artículos que más ahorran');
   });
 
-  it('impacto: ahorro como % de la demanda del año de test', async () => {
-    const a = await render('#/impacto?esc=A');
-    expect(a).toContain('= 15,0 % de la demanda del año de test');
-    expect(a).toContain('= 4,2 % de la demanda del año de test');
-    expect(a).toContain('Demanda del año de test: 21,86 M US$');
-    const b = await render('#/impacto?esc=B');
-    expect(b).toContain('= 4,6 % de la demanda del año de test');
-    expect(b).toContain('= 1,2 % de la demanda del año de test');
-  });
-
-  it('cómo usar: recorridos, módulos y glosario', async () => {
-    const t = await render('#/guia?esc=A', (el) => {
-      expect(el.querySelectorAll('.tour-zone').length).toBeGreaterThan(0);
-      const next = [...el.querySelectorAll<HTMLButtonElement>('.tour .btn')].find((b) => b.textContent?.includes('siguiente'));
-      act(() => next!.click());
-      expect(el.querySelector('.tour-text')?.textContent).toContain('Paso 2 de');
+  it('impacto: el detalle se despliega en la misma tarjeta', async () => {
+    await render('#/impacto', (el) => {
+      const btn = [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('Ver detalle del cálculo'));
+      act(() => btn!.click());
+      const d = el.querySelector('#imp-detail')?.textContent ?? '';
+      expect(d).toContain('0,495');
+      expect(d).toContain('0,868');
+      expect(d).toContain('3,45 M US$');
     });
-    for (const s of ['¿Qué quieres ver?', 'Objetivo del proyecto', 'Los módulos', 'Glosario', 'Velocidad', 'WRMSSE', 'Venta completada', 'Paso 1 de']) {
-      expect(t).toContain(s);
-    }
-    expect(await render('#/guia/glosario/velocity')).toContain('unidades por día');
   });
 
-  it('cómo usar: cambiar de pregunta desde el último paso no deja la página en blanco', async () => {
-    await render('#/guia?esc=A', (el) => {
-      const pills = () => [...el.querySelectorAll<HTMLButtonElement>('[aria-label="Recorridos"] .pill')];
-      const steps = () => [...el.querySelectorAll<HTMLButtonElement>('.tour-steps button')];
-      // Último paso del primer recorrido (6 pasos) y luego cada uno de los demás, incluido el de 3 pasos
-      act(() => steps()[steps().length - 1].click());
-      expect(el.querySelector('.tour-text')?.textContent).toContain('Paso 6 de 6');
-      for (const pill of pills().slice(1)) {
-        act(() => steps()[steps().length - 1].click());
-        act(() => pill.click());
-        expect(el.querySelector('.tour-text')?.textContent).toMatch(/^Paso 1 de \d/);
-        expect(el.querySelector('.tour-screen')).not.toBeNull();
-      }
+  it('cómo usar: para qué sirve cada sección y glosario en tabla', async () => {
+    const t = await render('#/guia', (el) => {
+      expect(el.querySelectorAll('.mod')).toHaveLength(4);
+      expect(el.querySelector('.glo-tbl')).not.toBeNull();
     });
+    clean(t);
+    for (const s of ['¿Para qué sirve este tablero?', 'Para qué sirve:', 'Glosario', 'Mercancía sobrante', 'Vitales', 'WAPE']) expect(t).toContain(s);
+    expect(await render('#/guia/glosario/velocity')).toContain('Lo que vende el artículo en un día típico');
   });
 
   it('origen de los datos con pendientes', async () => {
