@@ -1,3 +1,12 @@
+<!--
+Sync Impact Report
+- Versión: 1.1.2 → 2.0.0 (MAJOR: se redefine el principio I al permitir lecturas derivadas en el sitio).
+- Principios modificados: I (nuevo I.12 · lecturas derivadas en el sitio); II.4 (etiqueta de dinero
+  única y global); II.6 (% de demanda atendida continuo mediante I.12); Reglas de método 4 (excepción I.12).
+- Secciones agregadas: ninguna. Secciones eliminadas: ninguna.
+- Motivo: feature 002 (rediseño para gerencia a partir del mockup aprobado por el usuario el 2026-11-18).
+- Plantillas: sin cambios requeridos (la puerta "Constitution Check" del plan sigue igual).
+-->
 # Constitución — Frontend de resultados del pronóstico de reposición
 
 Reglas que no se negocian. Cualquier cambio a este documento se versiona (ver Gobierno).
@@ -48,7 +57,19 @@ reponer y cuánto cuesta equivocarse.
     la exportación MAY contar los artículos y sumar su gasto (`spend`) por celda sobre esa
     clasificación leída, sin reclasificar ni recalcular medianas.
 
-*Razón:* el frontend comunica resultados ya validados; cualquier recálculo crearía una segunda
+12. El sitio MAY calcular **lecturas derivadas**, solo a partir de los archivos exportados y
+    versionados (nunca del proyecto de datos):
+    - lecturas interpoladas de las curvas de impacto exportadas (interpolación lineal entre los
+      17 valores de z): sobrante y venta perdida a un % de demanda atendida continuo, la venta
+      recuperada con el mismo sobrante y el desglose por segmento leído con el z del total;
+    - métricas derivadas de las series exportadas (p. ej., el WAPE de la línea base por artículo).
+
+    Reglas: se rotulan como calculadas en el sitio en el detalle técnico; nunca reemplazan una
+    cifra que ya exista en una salida del modelo; en el 95 % de demanda atendida se muestran las
+    cifras oficiales del manifiesto (`meta.json → headline`).
+
+*Razón:* el frontend comunica resultados ya validados; cualquier recálculo que no sea una lectura
+derivada de I.12 crearía una segunda
 verdad que la gerencia no puede distinguir de la oficial.
 
 ### II. Reglas de dominio
@@ -64,14 +85,16 @@ verdad que la gerencia no puede distinguir de la oficial.
      muestra “Este artículo no entró al pronóstico” con enlace al embudo.
 3. **Escenarios.** A (pronóstico a un paso) y B (encadenado de 13 bloques) MUST NOT mezclarse en
    una misma cifra.
-4. **Dinero.** Todo valor monetario está a precio de venta y MUST rotularse “a precio de venta, no
-   es margen”.
+4. **Dinero.** Todo valor monetario está a precio de venta y no es margen. Lo indica una etiqueta
+   única y siempre visible en la barra superior de todas las pantallas (“Cifras a precio de venta ·
+   no es margen”); no se repite debajo de cada cifra.
 5. **Versiones de la venta.** La venta observada y la venta completada por quiebres de stock son
    distintas: MUST rotularse siempre y MUST NOT sumarse.
 6. **Colchón.** El z por artículo es fijo, el mismo que usaron las salidas de impacto
    (uno por escenario, igual al z del 95 % de servicio del total: A modelo −0,012 y línea base
-   0,711; B modelo 0,568 y línea base 0,711). Solo a nivel de segmento y total se puede mover el nivel
-   de servicio, y únicamente dentro de los valores ya calculados (z de −1 a 3, paso 0,25).
+   0,711; B modelo 0,568 y línea base 0,711). El nivel de servicio solo se mueve a nivel de segmento
+   y total: los valores exportados son los de z de −1 a 3 (paso 0,25), y entre ellos el sitio MAY
+   leer un % de demanda atendida continuo mediante las lecturas interpoladas de I.12.
 7. **Tramo de test.** Son los últimos 13 bloques de cada artículo: 53–65 para 515 artículos;
    51–63 (`HOUSEHOLD_1_366`) y 52–64 (`HOUSEHOLD_1_427`). Nunca se asume un rango fijo.
 8. **Bandas y series.** Las series de unidades y de venta en dinero van por bloque de 28 días. Las
@@ -168,7 +191,7 @@ decisiones de reposición equivocadas.
 3. La IA escribe el código. El usuario valida el contrato de datos y que las cifras coincidan con
    las salidas del modelo.
 4. Lo que no esté construido en el proyecto de ciencia de datos no se incluye, salvo los agregados
-   descriptivos de I.10.
+   descriptivos de I.10 y las lecturas derivadas de I.12.
 
 ## Gobierno
 
@@ -183,4 +206,4 @@ decisiones de reposición equivocadas.
 - Los TODO marcados aquí se resuelven contra las salidas del proyecto de ciencia de datos, nunca
   por suposición.
 
-**Version**: 1.1.2 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-13
+**Version**: 2.0.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-18

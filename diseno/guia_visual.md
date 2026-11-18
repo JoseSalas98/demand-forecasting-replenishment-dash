@@ -21,7 +21,10 @@ Los colores de datos pasaron un validador de paleta: banda de luminosidad para t
 | Texto | `#E6EDF5` | Texto principal y cifras |
 | Texto secundario | `#8C9AB0` | Etiquetas, ejes, subtítulos |
 | Cian | `#009FCA` | Acento de la interfaz (módulo activo, botones, filtros) y **modelo** |
-| Ciruela | `#965596` | **Línea base** (seasonal naive) |
+| Coral | `#FF9F6E` | **Línea base** (seasonal naive), siempre discontinua y con marcadores en rombo |
+| Ámbar | `#F2B24C` | **Mercancía sobrante** (exceso en anaquel) |
+| Rojo suave | `#EF7D7D` | **Ventas perdidas** por falta de producto |
+| Verde ahorro | `#4CC38A` | **Ahorro**, capital liberado y ventas recuperadas |
 | Azul | `#2B95E1` | Segmento **AX** |
 | Verde | `#148E66` | Segmento **AY** |
 | Violeta | `#725FB3` | Segmento **AZ** |
