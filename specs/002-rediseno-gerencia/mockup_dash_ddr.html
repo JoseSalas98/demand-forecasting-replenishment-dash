@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup del dash DDR</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Mismo mundo visual que el dash actual (azul noche + cian), con jerarquía más clara.
+   Layout: barra lateral + contenido en tarjetas; resumen gerencial arriba, detalle técnico plegable abajo. */
+:root{
+  --bg:#0a1120; --panel:#111a2c; --panel2:#18243c; --line:#26355a;
+  --text:#e8eef7; --muted:#9aa9c3; --faint:#6c7c99;
+  --accent:#2bb6e3; --accent-ink:#04202c;
+  --model:#2bb6e3; --base:#a3adbf;
+  --excess:#f2b24c; --lost:#ef7d7d; --good:#4cc38a;
+  --sx:#4f8ff7; --sy:#2fb586; --sz:#a07cf2;
+  --note:#ffd166;
+  --font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.5}
+h1,h2,h3{text-wrap:balance;margin:0;font-weight:600}
+h1{font-size:26px;letter-spacing:-.01em}
+h2{font-size:17px}
+h3{font-size:15px}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* ---------- estructura ---------- */
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100%;background:linear-gradient(90deg,#0c1426 220px,var(--bg) 220px)}
+aside{background:#0c1426;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh}
+.brand b{display:block;color:var(--accent);font-size:22px;letter-spacing:.18em}
+.brand span{font-size:12px;color:var(--muted)}
+nav{display:flex;flex-direction:column;gap:6px}
+.navbtn{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--muted);border:1px solid transparent}
+.navbtn:hover{background:var(--panel2);color:var(--text)}
+.navbtn[aria-current="page"]{background:var(--panel2);color:var(--text);border-color:var(--line);box-shadow:inset 3px 0 0 var(--accent)}
+.navbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.navbtn .ico{width:18px;text-align:center;color:var(--accent)}
+.side-foot{margin-top:auto;font-size:12px;color:var(--faint)}
+main{min-width:0}
+.topbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:flex-end;padding:12px 24px;border-bottom:1px solid var(--line);background:rgba(10,17,32,.92);position:sticky;top:0;z-index:5;backdrop-filter:blur(6px)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--panel2);border:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.chip b{color:var(--text);font-weight:500}
+.page{padding:24px;display:none;flex-direction:column;gap:18px;width:100%}
+.page.active{display:flex}
+.page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+.page-head p{color:var(--muted);margin-top:4px}
+
+/* ---------- tarjetas ---------- */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.card-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-side{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}
+
+/* ---------- botones: todo lo pulsable parece botón ---------- */
+.btn{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;border:1px solid #3a5a85;background:var(--panel2);color:var(--text);font-size:14px;font-weight:500;line-height:1.2}
+.btn:hover{border-color:var(--accent);background:#1d2d4b}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{background:#4cc6ee}
+.btn.sm{padding:6px 10px;font-size:13px}
+.btn[aria-pressed="true"]{background:#1d3550;border-color:var(--accent)}
+.btn .arrow{font-size:15px}
+.tech-btn{align-self:flex-start}
+.tech-btn .chev{display:inline-block;transition:transform .15s}
+.tech-btn[aria-expanded="true"] .chev{transform:rotate(180deg)}
+.tech{display:none;border-top:1px dashed var(--line);padding-top:14px;flex-direction:column;gap:14px}
+.tech.open{display:flex}
+.tech-label{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+
+/* ---------- notas del mockup ---------- */
+.note{display:flex;gap:8px;align-items:flex-start;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.45);border-radius:8px;padding:8px 10px;font-size:13px;color:#f3e2b3}
+.note::before{content:"✎";color:var(--note)}
+body.notes-off .note{display:none}
+
+/* ---------- KPIs ---------- */
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-size:30px;font-weight:600;line-height:1.1}
+.kpi .v.acc{color:var(--accent)}
+.kpi .l{color:var(--muted);font-size:13.5px}
+.headline{font-size:20px;line-height:1.45;max-width:62ch}
+.headline em{font-style:normal;color:var(--accent);font-weight:600}
+
+/* ---------- matriz ---------- */
+.matrix{display:grid;grid-template-columns:120px repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}
+.mx-head{font-size:12.5px;color:var(--muted);display:flex;align-items:flex-end;padding:0 4px 2px}
+.mx-row{font-size:13px;color:var(--text);display:flex;flex-direction:column;justify-content:center;padding-right:6px;font-weight:600}
+.mx-row span{font-weight:400;color:var(--muted);font-size:12px}
+.cell{all:unset;box-sizing:border-box;cursor:pointer;border-radius:10px;padding:10px 12px;border:1px solid var(--line);display:flex;flex-direction:column;gap:2px;min-height:86px;position:relative}
+.cell:hover{border-color:var(--accent)}
+.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cell[aria-pressed="true"]{border:2px solid var(--accent);box-shadow:0 0 0 3px rgba(43,182,227,.18)}
+.cell .nm{font-size:12px;font-weight:600;line-height:1.3;letter-spacing:-.01em}
+.cell .n{font-size:22px;font-weight:600}
+.cell .s{font-size:12px;color:var(--muted)}
+.cell .tag{align-self:flex-start;margin-top:4px;font-size:10.5px;padding:1px 7px;border-radius:999px;background:rgba(4,32,44,.55);color:#9fe1f6;border:1px solid rgba(159,225,246,.35)}
+.axis-note{display:flex;justify-content:space-between;font-size:12px;color:var(--faint)}
+
+/* barras horizontales */
+.hbar{display:grid;grid-template-columns:178px 1fr 56px;align-items:center;gap:10px;font-size:13.5px}
+.hbar .track{position:relative;height:12px;background:#0d1628;border-radius:6px}
+.hbar .fill{position:absolute;left:0;top:0;bottom:0;border-radius:6px}
+.hbar .ref{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--text);opacity:.55}
+.hbar .val{text-align:right}
+
+/* comparación de estrategias */
+.compare{display:flex;flex-direction:column;gap:14px}
+.strat{display:grid;grid-template-columns:200px 1fr;gap:12px;align-items:center}
+.strat .who{font-weight:600}
+.strat .who span{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.bar-big{height:34px;border-radius:7px;display:flex;align-items:center;padding:0 10px;font-weight:600;color:#2a1a00;min-width:max-content}
+.slider-row{display:flex;flex-wrap:wrap;gap:14px;align-items:center}
+input[type=range]{accent-color:var(--accent);width:min(360px,100%)}
+.big-pct{font-size:24px;font-weight:600;color:var(--accent);min-width:80px}
+.saving{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;background:rgba(76,195,138,.09);border:1px solid rgba(76,195,138,.4);border-radius:10px;padding:12px 14px}
+.saving .v{font-size:26px;font-weight:600;color:var(--good)}
+
+/* tablas */
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:500;font-size:12.5px}
+th:first-child,td:first-child,th.l,td.l{text-align:left}
+tbody tr:hover{background:rgba(255,255,255,.02)}
+.pos{color:var(--good)} .neg{color:var(--lost)}
+caption{caption-side:top;text-align:left;color:var(--muted);font-size:12.5px;padding-bottom:6px}
+
+/* gráficas */
+svg.chart{width:100%;height:auto;display:block}
+svg .grid{stroke:var(--line);stroke-width:1}
+svg .tick{fill:var(--faint);font-size:11px;font-family:var(--font)}
+svg .lbl{fill:var(--muted);font-size:11.5px;font-family:var(--font)}
+svg .shade{fill:rgba(43,182,227,.07)}
+svg .band{fill:rgba(255,255,255,.04)}
+.legend{display:flex;flex-wrap:wrap;gap:8px}
+.lg{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border-radius:999px;border:1px solid var(--line);font-size:12.5px;color:var(--text);background:var(--panel2)}
+.lg:hover{border-color:var(--accent)}
+.lg:focus-visible{outline:2px solid var(--accent)}
+.lg[aria-pressed="false"]{opacity:.45}
+.lg i{width:16px;height:3px;border-radius:2px;display:inline-block}
+.funnel{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:14px}
+.funnel .st{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+.funnel .st b{font-size:18px;display:block}
+.funnel .ar{color:var(--faint)}
+.search{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.search input{background:#0d1628;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;width:240px}
+.search input:focus{outline:2px solid var(--accent)}
+.pill-seg{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12.5px;border:1px solid}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1d2d4b;border:1px solid var(--accent);padding:10px 16px;border-radius:10px;font-size:14px;display:none;z-index:20;max-width:90vw}
+.toast.show{display:block}
+.defs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.def{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.def b{display:block;margin-bottom:2px}
+
+/* ---------- bienvenida ---------- */
+#inicio.active{padding:0;min-height:calc(100vh - 57px);position:relative;align-items:center;justify-content:center;overflow:hidden}
+#net{position:absolute;inset:0;width:100%;height:100%}
+.welcome{position:relative;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;padding:40px 24px;background:radial-gradient(closest-side,rgba(10,17,32,.92),rgba(10,17,32,.55) 70%,transparent)}
+.welcome .eyebrow{font-size:13px;letter-spacing:.32em;color:var(--accent);text-transform:uppercase}
+.welcome h1{font-size:clamp(32px,4.6vw,58px);letter-spacing:-.02em;line-height:1.05}
+.welcome p{color:var(--muted);font-size:17px}
+.welcome .btn{margin-top:10px;padding:12px 22px;font-size:16px}
+
+/* ---------- burbujas ---------- */
+.seg-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(360px,1fr);gap:18px;align-items:stretch}
+#bubCard{position:relative}
+#bubbles{flex:1;display:flex;align-items:center}
+@keyframes floatA{0%,100%{transform:translate(0,0)}50%{transform:translate(0,-5px)}}
+@keyframes floatB{0%,100%{transform:translate(0,0)}33%{transform:translate(3px,-3px)}66%{transform:translate(-2px,2px)}}
+@keyframes floatC{0%,100%{transform:translate(0,0)}50%{transform:translate(-3px,-4px)}}
+svg.bubbles .float{animation:floatA 8s ease-in-out infinite}
+svg.bubbles .bub:hover .float,svg.bubbles .bub:focus-visible .float{animation-play-state:paused}
+svg.bubbles .lift{transition:transform .25s ease;transform-box:fill-box;transform-origin:center}
+svg.bubbles .bub:hover .lift,svg.bubbles .bub:focus-visible .lift{transform:scale(1.07)}
+svg.bubbles .halo-g{cursor:help}
+svg.bubbles .halo-g:hover .halo{stroke:var(--muted);fill:rgba(255,255,255,.045)}
+.tip{position:absolute;pointer-events:none;z-index:6;max-width:340px;background:#1a2742;border:1px solid #3a5a85;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;transition:opacity .12s}
+.tip.show{opacity:1}
+.tip b{display:block;font-size:14px;margin-bottom:3px}
+.tip .k{display:block;color:var(--muted);font-size:12px;margin-top:6px}
+#segPanel{position:relative}
+.qi{all:unset;cursor:help;display:inline-grid;place-items:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--faint);color:var(--muted);font-size:10.5px;font-weight:600;margin-left:6px;vertical-align:1px}
+.qi:hover,.qi:focus-visible{border-color:var(--accent);color:var(--accent)}
+svg .rpt{cursor:pointer}
+svg .rhit{fill:transparent;cursor:pointer}
+.lever{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:8px}
+.lever-head{display:flex;gap:10px;align-items:center}
+.lever-ico{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:16px}
+.lever-v{font-size:32px;font-weight:600;line-height:1.1}
+.mini-bars{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.mb-row,.mb-axis{display:grid;grid-template-columns:86px 1fr 92px;gap:10px;align-items:center;font-size:13px}
+.mb-row .num{text-align:right}
+.mb-track{position:relative;height:18px;background:#0d1628;border-radius:5px}
+.mb-fill{position:absolute;left:0;top:0;bottom:0;border-radius:5px;transition:width .35s ease}
+.mb-ticks{position:relative;height:14px;border-top:1px solid var(--line)}
+.mb-ticks i{position:absolute;top:2px;white-space:nowrap;transform:translateX(-50%);font-style:normal;font-size:11px;color:var(--faint)}
+.mb-ticks i:first-child{transform:none}
+.mb-ticks i:last-child{transform:translateX(-100%)}
+.strip{display:flex;flex-wrap:wrap;gap:8px 22px;padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:var(--panel2);font-size:13.5px;color:var(--muted)}
+.strip b{font-size:17px;margin-right:4px}
+.det-block{display:flex;flex-direction:column;gap:12px;padding-top:6px}
+.mod p{max-width:70ch}
+.mod .card-head{min-height:34px}
+ul.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:5px;color:var(--muted);font-size:14px}
+ul.steps li::marker{color:var(--accent)}
+.glo-search{background:#0d1628;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 12px;font:inherit;width:260px}
+.glo-search:focus{outline:2px solid var(--accent)}
+.glo-tbl{table-layout:fixed}
+.glo-tbl td,.glo-tbl th{text-align:left;white-space:normal;vertical-align:top}
+.glo-tbl td.glo-t{font-weight:600}
+.glo-tbl td.glo-d{color:var(--text)}
+.glo-tbl td.glo-tec{color:var(--faint);font-size:12.5px}
+.glo-tbl tr.glo-grp th{color:var(--accent);font-size:12px;letter-spacing:.08em;text-transform:uppercase;background:rgba(43,182,227,.06);padding-top:12px}
+h3.glo-g{margin:8px 0 2px;color:var(--accent);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.def .tec{display:block;margin-top:6px;font-size:12px;color:var(--faint)}
+.fun-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr);gap:18px;align-items:center}
+.fun-tiles{display:flex;flex-direction:column;gap:10px}
+.ftile{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.ftile .v{font-size:26px;font-weight:600;line-height:1.1}
+.ftile .l{color:var(--muted);font-size:13.5px}
+@media (prefers-reduced-motion:reduce){svg.bubbles .float{animation:none}}
+@media (max-width:1100px){.fun-grid{grid-template-columns:1fr}}
+svg.bubbles .halo{fill:rgba(255,255,255,.025);stroke:var(--line);stroke-dasharray:4 5;transition:r .6s ease}
+svg.bubbles .halo-g,svg.bubbles .fam-g,svg.bubbles .bub{transition:transform .6s ease}
+svg.bubbles .bub{cursor:pointer;outline:none}
+svg.bubbles .bub circle.ball{transition:r .6s ease,fill-opacity .2s,stroke-width .15s;stroke-width:1.5;fill-opacity:.2}
+svg.bubbles .bub circle.shadow{display:none}
+svg.bubbles .bub:hover circle.ball,svg.bubbles .bub:focus-visible circle.ball{fill-opacity:.32;stroke-width:2}
+svg.bubbles .bub.sel circle.ball{fill-opacity:.4;stroke:#fff;stroke-width:2.5}
+svg.bubbles .bub-name{font-weight:500;font-family:var(--font);pointer-events:none}
+svg.bubbles .bub-val{fill:#f2f6fc;font-weight:600;font-family:var(--font);pointer-events:none;font-variant-numeric:tabular-nums}
+svg.bubbles .fam-name{fill:var(--text);font-size:17px;font-weight:600;font-family:var(--font)}
+svg.bubbles .fam-sub{fill:var(--muted);font-size:13px;font-family:var(--font)}
+svg.bubbles .fam-tag{fill:var(--accent);font-size:12px;font-family:var(--font);letter-spacing:.04em}
+.seg-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);align-items:center}
+.seg-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.icon-btn{gap:6px}
+.icon-btn .ico{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;font-size:12px;font-weight:700;font-style:normal}
+.seg-toggle{display:inline-flex;border:1px solid #3a5a85;border-radius:9px;overflow:hidden}
+.seg-toggle .btn{border:0;border-radius:0}
+.seg-toggle .btn[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* ---------- embudo ---------- */
+svg.funnel-svg .stage-n{font-size:19px;font-weight:700;fill:#06121f;font-family:var(--font)}
+svg.funnel-svg .stage-l{font-size:14px;fill:var(--text);font-family:var(--font)}
+svg.funnel-svg .stage-s{font-size:12.5px;fill:var(--muted);font-family:var(--font)}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+th .sort{all:unset;cursor:pointer;color:var(--muted);border-bottom:1px dotted var(--faint)}
+th .sort:hover{color:var(--text)}
+th .sort:focus-visible{outline:2px solid var(--accent)}
+td.hl,th.hl{background:rgba(43,182,227,.08)}
+.flag{color:var(--excess);font-size:12px}
+
+@media (max-width:1100px){.seg-layout{grid-template-columns:1fr}}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px 16px}
+  nav{flex-direction:row;flex-wrap:wrap}
+  .side-foot{display:none}
+  .g2,.g3,.g-side{grid-template-columns:1fr}
+  .page{padding:16px}
+  .topbar{padding:10px 16px;justify-content:flex-start}
+  .matrix{grid-template-columns:86px repeat(3,minmax(0,1fr))}
+  .strat{grid-template-columns:1fr}
+  .hbar{grid-template-columns:110px 1fr 48px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><b>DDR</b><span>Reposición guiada por la demanda</span></div>
+    <nav aria-label="Secciones">
+      <button class="navbtn" data-go="inicio"><span class="ico">⌂</span>Inicio</button>
+      <button class="navbtn" data-go="segmentos"><span class="ico">▦</span>Segmentos</button>
+      <button class="navbtn" data-go="articulo"><span class="ico">∿</span>Artículo</button>
+      <button class="navbtn" data-go="impacto"><span class="ico">$</span>Impacto</button>
+      <button class="navbtn" data-go="glosario"><span class="ico">?</span>Cómo usar</button>
+    </nav>
+    <div class="side-foot">Mockup con cifras reales exportadas el 2026-11-14. Origen de los datos no cambia.</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <span class="chip">💲 Cifras a <b>precio de venta</b> · no es margen</span>
+      <button class="btn sm" id="notesBtn" aria-pressed="true">Notas del mockup: <b id="notesLbl">visibles</b></button>
+    </div>
+
+    <!-- ================= INICIO ================= -->
+    <section class="page" id="inicio">
+      <canvas id="net" aria-hidden="true"></canvas>
+      <div class="welcome">
+        <span class="eyebrow">Demand Driven Replenishment</span>
+        <h1>Reposición guiada<br>por la demanda</h1>
+        <p>Walmart · 10 tiendas · 2011–2016</p>
+        <button class="btn primary" data-go="segmentos">Explorar los segmentos <span class="arrow">→</span></button>
+      </div>
+    </section>
+
+    <!-- ================= SEGMENTOS ================= -->
+    <section class="page" id="segmentos">
+      <div class="page-head">
+        <div>
+          <h1>Segmentos del catálogo</h1>
+          <p>Tres familias según cuánto aportan a la venta; dentro de cada una, tres grupos según qué tan regular es su venta</p>
+        </div>
+      </div>
+      <div class="note">La matriz se reemplaza por burbujas agrupadas por familia. Haz clic en una burbuja para ver su radar y sus barras a la derecha. El botón de tamaño cuenta la idea de los "pocos vitales".</div>
+
+      <div class="seg-layout">
+        <div class="card" id="bubCard">
+          <div class="card-head">
+            <h2>¿Cómo se reparte el catálogo?</h2>
+            <div style="display:flex;align-items:center;gap:8px"><span class="muted small">Tamaño por</span>
+              <div class="seg-toggle" role="group" aria-label="Tamaño de las burbujas">
+                <button class="btn sm" data-size="spend" aria-pressed="true">Venta</button>
+                <button class="btn sm" data-size="n" aria-pressed="false">Artículos</button>
+              </div>
+            </div>
+          </div>
+          <div id="bubbles"></div>
+          <div class="seg-legend">
+            <span><i style="background:#4f8ff7"></i>Continuos · venta pareja</span>
+            <span><i style="background:#2fb586"></i>Recurrentes · vuelve con altibajos</span>
+            <span><i style="background:#a07cf2"></i>Ocasionales · venta con saltos</span>
+          </div>
+          <p class="muted small" id="sizeHint"></p>
+          <div class="tip" id="bubTip" role="tooltip"></div>
+          <div class="note">Las burbujas flotan despacio, cada una a su ritmo, y crecen al pasar el cursor. Al pasar el cursor sobre el halo de una familia aparece su definición; sobre una burbuja, la definición combinada.</div>
+        </div>
+
+        <div class="card" id="segPanel"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Del catálogo a lo que se pronostica</h2>
+          <button class="btn sm icon-btn" data-go="detalle"><i class="ico">i</i>Detalle de los pronosticados</button></div>
+        <div class="fun-grid">
+          <div id="funnel"></div>
+          <div class="fun-tiles">
+            <div class="ftile"><div class="v num" style="color:var(--accent)">52 %</div><div class="l">de la venta de la cadena queda cubierta por los 517 artículos con pronóstico</div></div>
+            <div class="ftile"><div class="v num">21,86 M US$</div><div class="l">de demanda de esos 517 en el año de prueba: es lo que está en juego</div></div>
+            <div class="ftile"><div class="v num" style="color:var(--excess)">75</div><div class="l">Vitales sin pronóstico: no pasan los criterios de calidad del dato o no tienen historia suficiente tras el procesamiento</div></div>
+          </div>
+        </div>
+        <div class="note">El espacio libre junto al embudo ahora muestra cuánto pesa lo pronosticado y por qué quedan fuera 75. El detalle técnico ya no se pliega dentro de la página: se abre en una página aparte con el botón ⓘ, que aparece aquí y en el panel del grupo.</div>
+      </div>
+    </section>
+
+    <!-- ================= DETALLE DE SEGMENTOS ================= -->
+    <section class="page" id="detalle">
+      <div><button class="btn sm" data-go="segmentos"><span class="arrow">←</span> Volver a Segmentos</button></div>
+      <div class="page-head">
+        <div>
+          <h1>Detalle de los grupos con pronóstico</h1>
+          <p>Error del pronóstico por grupo y artículos que lo componen</p>
+        </div>
+      </div>
+      <div class="note">Esta página reúne lo técnico que antes estaba en Segmentos: la comparación con los errores, la gráfica de CV y la tabla de artículos.</div>
+      <div class="tabs" id="detTabs"></div>
+
+      <div class="card">
+        <h2>Comparación de los tres grupos</h2>
+        <div class="tbl-wrap"><table id="cmpTbl"></table></div>
+        <p class="muted small">WAPE = error absoluto ÷ venta sin faltantes. WRMSSE = error ponderado de la competencia M5 (menor es mejor). Año de prueba: 13 periodos de 4 semanas.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2 id="artListTitle"></h2><span class="muted small">Pulsa un encabezado para ordenar</span></div>
+        <div class="tbl-wrap"><table id="artList"></table></div>
+        <div class="note">En el mockup se muestran los 15 artículos de mayor venta de cada grupo. En el dash real van todos, ordenables y con buscador. La gráfica de CV de train por artículo va debajo, sin cambios.</div>
+      </div>
+    </section>
+
+    <!-- ================= ARTÍCULO ================= -->
+    <section class="page" id="articulo">
+      <div class="page-head">
+        <div>
+          <h1>Artículo <span class="num">FOODS_3_090</span></h1>
+          <p id="artSub"></p>
+        </div>
+        <div class="search">
+          <input id="artSearch" list="artOptions" value="FOODS_3_090" aria-label="Buscar artículo" placeholder="Buscar artículo (p. ej., FOODS_3)"><datalist id="artOptions"></datalist>
+          <button class="btn sm" id="artGo">Buscar <span class="arrow">→</span></button>
+          <button class="btn sm" id="onlyF" aria-pressed="true">Solo con pronóstico</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="headline" id="artHeadline"></p>
+      </div>
+
+      <div class="card" id="artCard" style="position:relative">
+        <div class="card-head"><h2>Unidades vendidas cada 4 semanas</h2>
+          <button class="btn sm icon-btn" data-go="detalleart"><i class="ico">i</i>Detalle del pronóstico</button></div>
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
+          <div class="legend" id="artLegend"></div>
+          <div class="seg-toggle" role="group" aria-label="Rango de la gráfica">
+            <button class="btn sm" data-zoom="0" aria-pressed="true">Toda la historia</button>
+            <button class="btn sm" data-zoom="1" aria-pressed="false">Año de prueba</button>
+          </div>
+        </div>
+        <div id="artChart"></div>
+        <p class="muted small">La franja sombreada es el año de prueba. Allí se comparan el pronóstico y la línea base (repetir lo vendido en el mismo periodo del año anterior) contra la venta sin faltantes (la línea punteada estima lo que se habría vendido con producto disponible).</p>
+        <div class="tip" id="artTip" role="tooltip"></div>
+        <div class="note">El pronóstico y la línea base aparecen por defecto, cada uno con su color y sus marcadores. Al pasar el cursor, la etiqueta muestra la fecha del periodo y el valor de cada línea. El botón ⓘ lleva al detalle técnico, como en Segmentos.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>¿Cuánto ahorra este artículo?</h2>
+          <button class="btn sm icon-btn" data-go="detalleart"><i class="ico">i</i>Ver el cálculo</button></div>
+        <p id="artImpact"></p>
+        <div class="grid g3" style="gap:10px">
+          <div class="kpi"><span class="v num" style="color:var(--excess);font-size:24px" id="aEx"></span><span class="l">menos mercancía sobrante</span></div>
+          <div class="kpi"><span class="v num" style="color:var(--lost);font-size:24px" id="aLo"></span><span class="l">más ventas perdidas</span></div>
+          <div class="kpi"><span class="v num" style="color:var(--good);font-size:24px" id="aNet"></span><span class="l">ahorro neto en el año</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DETALLE DEL ARTÍCULO ================= -->
+    <section class="page" id="detalleart">
+      <div><button class="btn sm" data-go="articulo"><span class="arrow">←</span> Volver al artículo</button></div>
+      <div class="page-head">
+        <div>
+          <h1>Detalle del pronóstico · <span class="num">FOODS_3_090</span></h1>
+          <p>Cálculo del ahorro, error del pronóstico y datos por periodo del año de prueba</p>
+        </div>
+      </div>
+      <div class="note">Esta página reúne lo técnico que antes estaba plegado en Artículo, y suma la tabla que justifica el recuadro "¿Cuánto ahorra este artículo?".</div>
+
+      <div class="card">
+        <h2>Cómo se calcula el ahorro</h2>
+        <div class="tbl-wrap"><table id="calcTbl"></table></div>
+        <p class="muted small">Para atender el 95 % de la demanda total, a cada pedido se le suma un colchón de z × el error típico. Pronóstico: z = −0,01. Línea base: z = 0,71. Los totales de unidades del año casi coinciden; la diferencia está periodo a periodo: la línea base se equivoca más, necesita más colchón y ese colchón termina como sobrante.</p>
+      </div>
+
+      <div class="card">
+        <h2>Error del pronóstico</h2>
+        <div class="grid g3">
+          <div class="kpi"><span class="tech-label">WAPE</span><span class="v num" style="font-size:22px">5,2 %</span><span class="l">error absoluto ÷ venta sin faltantes; línea base: 6,7 %</span></div>
+          <div class="kpi"><span class="tech-label">MAE</span><span class="v num" style="font-size:22px">784 u.</span><span class="l">error medio por periodo de 4 semanas</span></div>
+          <div class="kpi"><span class="tech-label">RMSSE</span><span class="v num" style="font-size:22px">0,135</span><span class="l">error escalado por la variación típica de la serie (criterio M5)</span></div>
+          <div class="kpi"><span class="tech-label">CV de segmentación</span><span class="v num" style="font-size:22px">41,6 %</span><span class="l">CV de train sin días de faltante; define la clase "recurrentes"</span></div>
+          <div class="kpi"><span class="tech-label">CV histórico</span><span class="v num" style="font-size:22px">42,6 %</span><span class="l">σ ÷ media desde el lanzamiento (media 16.539 u., σ 7.047 u.); descriptivo</span></div>
+          <div class="kpi"><span class="tech-label">Revisión</span><span class="v num" style="font-size:22px">No</span><span class="l">el proyecto no lo marcó por error atípico</span></div>
+        </div>
+      </div>
+
+      <div class="grid g2">
+        <div class="card"><h2>Distribución de unidades por periodo</h2><div id="artHist"></div><p class="muted small">Mil unidades por periodo. 61 periodos desde el lanzamiento, en 8 rangos de igual ancho.</p></div>
+        <div class="card"><h2>Venta en dinero por periodo</h2><div id="artMoney"></div><p class="muted small">Mil US$ por periodo de 4 semanas, a precio de venta.</p></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Pronóstico por periodo · año de prueba</h2>
+          <button class="btn primary sm" id="exportCsv">Exportar CSV <span class="arrow">⤓</span></button></div>
+        <div class="tbl-wrap"><table id="artTbl"></table></div>
+        <label class="small muted" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="bandsChk"> Mostrar media y bandas ±3σ en la gráfica del artículo</label>
+      </div>
+    </section>
+
+    <!-- ================= IMPACTO ================= -->
+    <section class="page" id="impacto">
+      <div class="page-head">
+        <div>
+          <h1>Impacto en dinero</h1>
+          <p>Año de prueba · pedir según el pronóstico frente a la línea base (repetir lo vendido en el mismo periodo del año anterior)</p>
+        </div>
+      </div>
+      <div class="note">En Impacto el detalle se despliega en la misma tarjeta, debajo del control, para mover el porcentaje y ver la curva a la vez. Desaparece el botón global "Detalle técnico" de la barra superior.</div>
+
+      <div class="card">
+        <div class="slider-row">
+          <label for="svc"><h2>¿Qué porcentaje de la demanda quieres atender?</h2>
+            <span class="muted small">Atender más exige pedir con más respaldo, y eso deja más mercancía sobrante.</span></label>
+          <input type="range" id="svc" min="90" max="99" step="0.5" value="95">
+          <span class="big-pct num" id="svcLbl">95 %</span>
+        </div>
+        <p class="muted">Un mejor pronóstico se puede aprovechar de dos maneras. Se elige una, la otra o un punto intermedio; los dos montos no se suman.</p>
+
+        <div class="grid g2">
+          <div class="lever">
+            <div class="lever-head"><span class="lever-ico" style="background:rgba(242,178,76,.15);color:var(--excess)">$</span><div><h3>Liberar capital</h3><span class="muted small" id="lvA_sub"></span></div></div>
+            <div class="lever-v num" id="lvA_v" style="color:var(--good)"></div>
+            <p class="small" id="lvA_t"></p>
+            <div class="mini-bars" id="lvA_bars"></div>
+          </div>
+          <div class="lever">
+            <div class="lever-head"><span class="lever-ico" style="background:rgba(76,195,138,.15);color:var(--good)">↗</span><div><h3>Recuperar ventas</h3><span class="muted small" id="lvB_sub"></span></div></div>
+            <div class="lever-v num" id="lvB_v" style="color:var(--good)"></div>
+            <p class="small" id="lvB_t"></p>
+            <div class="mini-bars" id="lvB_bars"></div>
+          </div>
+        </div>
+        <div><button class="btn sm icon-btn tech-btn" id="impDetBtn" aria-expanded="false" data-target="impDet"><i class="ico">i</i>Ver detalle del cálculo <span class="chev">▾</span></button></div>
+        <div class="tech" id="impDet">
+      <div class="det-block">
+        <p class="tech-label">Curva sobrante vs. ventas perdidas (total, 17 valores de z de −1 a 3)</p>
+        <div class="legend"><span class="lg" style="cursor:default"><i style="background:var(--model)"></i>Pronóstico</span><span class="lg" style="cursor:default"><i style="background:#ff9f6e"></i>Línea base</span></div>
+        <div id="curveChart"></div>
+        <div class="grid g3">
+          <div class="kpi"><span class="tech-label">z en este punto</span><span class="v num" style="font-size:16px" id="zTxt"></span><span class="l">colchón = z × error típico</span></div>
+          <div class="kpi"><span class="tech-label">Venta recuperada con el mismo sobrante</span><span class="v num" style="font-size:20px">0,91 M US$</span><span class="l">si el pronóstico dejara el mismo sobrante que la línea base al 95 %</span></div>
+          <div class="kpi"><span class="tech-label">WRMSSE del año de prueba</span><span class="v num" style="font-size:20px">0,495</span><span class="l">línea base: 0,868</span></div>
+        </div>
+        <p class="muted small">El % de demanda atendida es tasa de cumplimiento en dinero (demanda atendida ÷ demanda). Por eso z ≈ 0 ya da cerca del 95 %: no es el nivel de servicio por ciclo.</p>
+      </div>
+      <div class="det-block">
+        <h2>Lectura por segmento</h2>
+        <p class="muted small">Si cada segmento se ajusta por separado a su propio 95 %, el sobrante evitado es 0,46 M US$ (continuos), 1,33 M US$ (recurrentes) y 1,66 M US$ (ocasionales), y suma 3,45 M US$. No coincide con el total porque cada segmento usa otro z.</p>
+      </div>
+      <div class="det-block">
+        <h2>Ahorro por artículo</h2>
+        <p class="muted small">Ahorro por artículo = (sobrante + ventas perdidas de la línea base) − (sobrante + ventas perdidas del pronóstico), con el z que da el 95 % al total (pronóstico z = −0,01; línea base z = 0,71). Con ese z fijo, algunos artículos pueden salir con ahorro negativo aunque se pronostiquen bien.</p>
+      </div>
+        </div>
+        <div class="note">Las barras usan una escala fija, así que la línea base también se mueve con el control. Antes la barra de la línea base siempre llenaba el ancho y parecía quieta. Las dos tarjetas son las dos palancas de la curva de eficiencia entre inventario y servicio: liberar capital con el mismo servicio, o atender más demanda con el mismo inventario.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>¿Dónde está el capital liberado?</h2><span class="muted small" id="segPctLbl"></span></div>
+        <div id="segBars" style="display:flex;flex-direction:column;gap:12px"></div>
+        <p class="muted small" id="segSum"></p>
+        <div class="strip">
+          <span><b class="num" style="color:var(--accent)">55</b> artículos explican la mitad del ahorro</span>
+          <span><b class="num" style="color:var(--accent)">179</b> explican el 80 %</span>
+          <span><b class="num" style="color:var(--good)">490</b> de 517 cuestan menos con el pronóstico</span>
+          <span><b class="num" style="color:var(--lost)">27</b> cuestan más y se revisan uno a uno</span>
+        </div>
+        <div class="note">"Pocos artículos explican la mayor parte" pasa de ocupar una tarjeta a una franja de cuatro cifras.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Los 10 artículos que más ahorran</h2><span class="muted small">cifras en mil US$ · al 95 % de la demanda</span></div>
+        <div class="tbl-wrap"><table id="topTbl"></table></div>
+      </div>
+    </section>
+
+    <!-- ================= GLOSARIO ================= -->
+    <section class="page" id="glosario">
+      <div class="page-head"><div><h1>Cómo usar el tablero</h1><p>Para qué sirve cada sección y qué significa cada término</p></div></div>
+      <div class="note">La guía conserva la estructura del dash original (objetivo, módulos y glosario) con lenguaje sencillo. El glosario es una tabla por temas, con el nombre técnico en su propia columna para quien quiera cruzarlo con el proyecto de datos.</div>
+
+      <div class="card">
+        <h2>¿Para qué sirve este tablero?</h2>
+        <p style="max-width:85ch">Ayuda a decidir <b>cuánto reponer de cada artículo cada 4 semanas</b> y a ver <b>cuánto cuesta equivocarse</b>. Compara dos maneras de pedir: el <b>pronóstico</b>, un modelo que aprende de la historia de ventas, y la <b>línea base</b>, que repite lo vendido en el mismo periodo del año anterior. Las dos se ponen a prueba en el último año de datos, que el pronóstico no vio.</p>
+        <div class="strip">
+          <span><b class="num">10</b> tiendas de Walmart</span>
+          <span><b class="num">2011–2016</b> de historia</span>
+          <span><b class="num">3.049</b> artículos en el catálogo</span>
+          <span><b class="num" style="color:var(--accent)">517</b> con pronóstico</span>
+        </div>
+        <p class="muted small">El tablero no recalcula nada: muestra los resultados guardados del proyecto de datos. Todo valor en dinero está a precio de venta, así que no es ganancia.</p>
+      </div>
+
+      <div class="grid g2">
+        <div class="card mod">
+          <div class="card-head"><h2>⌂ Inicio</h2><button class="btn sm" data-go="inicio">Ir a Inicio <span class="arrow">→</span></button></div>
+          <p><b>Para qué sirve:</b> es la puerta de entrada. Presenta el proyecto y lleva a Segmentos.</p>
+          <ul class="steps"><li>Pulsa "Explorar los segmentos" para empezar el recorrido.</li><li>El menú de la izquierda lleva a cualquier sección en cualquier momento.</li><li>"Origen de los datos", al pie del menú del dash real, lista los archivos leídos y las verificaciones de las cifras.</li></ul>
+        </div>
+        <div class="card mod">
+          <div class="card-head"><h2>▦ Segmentos</h2><button class="btn sm" data-go="segmentos">Ir a Segmentos <span class="arrow">→</span></button></div>
+          <p><b>Para qué sirve:</b> muestra cómo se reparte el catálogo. Responde qué artículos pesan más en la venta, cuáles venden de forma más pareja y cuáles se pronostican.</p>
+          <ul class="steps">
+            <li>Pasa el cursor sobre una familia o una burbuja para leer qué significa.</li>
+            <li>Haz clic en una burbuja: a la derecha aparecen su descripción, el radar y las barras frente al artículo típico.</li>
+            <li>Cambia el tamaño entre venta y número de artículos para ver que pocos artículos hacen la mayor parte de la venta.</li>
+            <li>El botón ⓘ abre los errores del pronóstico por grupo y la lista de sus artículos.</li>
+          </ul>
+        </div>
+        <div class="card mod">
+          <div class="card-head"><h2>∿ Artículo</h2><button class="btn sm" data-go="articulo">Ir a Artículo <span class="arrow">→</span></button></div>
+          <p><b>Para qué sirve:</b> mira un artículo concreto: cómo se ha vendido, qué tan bien se pronosticó y cuánto ahorra frente a la línea base.</p>
+          <ul class="steps">
+            <li>Busca el artículo por su código o elígelo de la lista.</li>
+            <li>Pasa el cursor por la gráfica para ver la fecha y las unidades de cada línea.</li>
+            <li>Usa "Año de prueba" para acercarte al año en que se comparan el pronóstico y la línea base.</li>
+            <li>El botón ⓘ abre el cálculo del ahorro, el error y la tabla por periodo, que se puede exportar.</li>
+          </ul>
+        </div>
+        <div class="card mod">
+          <div class="card-head"><h2>$ Impacto</h2><button class="btn sm" data-go="impacto">Ir a Impacto <span class="arrow">→</span></button></div>
+          <p><b>Para qué sirve:</b> traduce el pronóstico a dinero. Muestra cuánto capital se libera y cuántas ventas se recuperan frente a la línea base.</p>
+          <ul class="steps">
+            <li>Mueve el control para elegir qué porcentaje de la demanda quieres atender.</li>
+            <li>Lee las dos maneras de aprovechar el pronóstico: liberar capital o recuperar ventas.</li>
+            <li>Mira en qué grupos está el ahorro y cuáles son los 10 artículos que más ahorran.</li>
+            <li>"Ver detalle del cálculo" despliega la curva debajo, sin salir de la página.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>Glosario</h2>
+          <input id="gloSearch" class="glo-search" placeholder="Buscar un término" aria-label="Buscar en el glosario"></div>
+        <div id="glo"></div>
+        <p class="muted small" id="gloEmpty" style="display:none">No hay términos con esa palabra. Prueba con otra, por ejemplo "sobrante" o "vitales".</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ===================== DATOS REALES (export del 2026-11-14) ===================== */
+const D = {
+  demand: {AX:7579963, AY:9851338, AZ:4424915},
+  // [z, sobrante, ventas perdidas] por segmento
+  curves: {
+    AX:{m:[[-1,63278,803630],[-.75,92289,658642],[-.5,135306,527660],[-.25,194251,412606],[0,271442,315798],[.25,366360,236717],[.5,478160,174517],[.75,606891,129249],[1,747303,95662],[1.25,897723,72083],[1.5,1053656,54017],[1.75,1214088,40450],[2,1378799,31162],[2.25,1545767,24130],[2.5,1714796,19160],[2.75,1885230,15594],[3,2056584,12949]],
+        n:[[-1,74357,1580705],[-.75,111448,1322884],[-.5,165860,1082383],[-.25,242594,864205],[0,348739,675438],[.25,486972,518759],[.5,654316,391191],[.75,849115,291078],[1,1067045,214097],[1.25,1306960,159099],[1.5,1562968,120195],[1.75,1828882,91197],[2,2101893,69296],[2.25,2379910,52401],[2.5,2661788,39367],[2.75,2946879,29547],[3,3233890,21645]]},
+    AY:{m:[[-1,90022,1384013],[-.75,135095,1112464],[-.5,201179,861927],[-.25,300243,644369],[0,445680,473183],[.25,635810,346692],[.5,859113,253373],[.75,1106101,183738],[1,1374347,135362],[1.25,1655153,99547],[1.5,1944765,72537],[1.75,2242411,53561],[2,2545275,39803],[2.25,2852597,30503],[2.5,3162719,24002],[2.75,3474509,19171],[3,3787478,15518]],
+        n:[[-1,131783,3317283],[-.75,191373,2725339],[-.5,277477,2159789],[-.25,406876,1637533],[0,608803,1187807],[.25,926954,854304],[.5,1351335,627031],[.75,1841527,465570],[1,2373491,345880],[1.25,2940662,261398],[1.5,3527665,196746],[1.75,4133811,151239],[2,4751502,117276],[2.25,5376699,90819],[2.5,6010551,73018],[2.75,6649148,59960],[3,7291499,50658]]},
+    AZ:{m:[[-1,39486,914526],[-.75,62883,730311],[-.5,98763,557379],[-.25,158132,406750],[0,249682,285229],[.25,382712,205181],[.5,542132,151521],[.75,719187,115496],[1,905784,89014],[1.25,1098493,68643],[1.5,1295457,52528],[1.75,1496177,40167],[2,1699809,30720],[2.25,1905885,23717],[2.5,2113843,18595],[2.75,2323517,15190],[3,2533760,12353]],
+        n:[[-1,74081,2128709],[-.75,132272,1761353],[-.5,228801,1392430],[-.25,375776,1025697],[0,589248,719948],[.25,908162,519640],[.5,1292243,384500],[.75,1706691,279726],[1,2143561,197375],[1.25,2596980,131573],[1.5,3071821,87192],[1.75,3562753,58903],[2,4062905,39833],[2.25,4569800,27508],[2.5,5079661,18147],[2.75,5592988,12253],[3,6107940,7983]]}
+  },
+  matrix: {AX:[207,28218383],AY:[251,35422150],AZ:[134,19250219],BX:[284,11978293],BY:[331,13589723],BZ:[180,7635403],CX:[402,6323873],CY:[729,10073540],CZ:[369,4849479]},
+  forecasted: {AX:191, AY:229, AZ:97},
+  policy: {AX:"Reposición regular", AY:"Revisión periódica", AZ:"Prioridad en promociones"},
+  // medianas normalizadas (1 = artículo típico del catálogo) y crudas
+  radar: {
+    AX:{spend:[3.57,90723],units:[3.38,23246],cv:[0.58,17.4],zero:[0.09,0.0034],vel:[2.49,16.9]},
+    AY:{spend:[4.34,110033],units:[4.13,28377],cv:[1.04,31.5],zero:[0.27,0.0107],vel:[3.07,20.9]},
+    AZ:{spend:[4.21,106953],units:[4.68,32221],cv:[1.76,53.0],zero:[1.35,0.0527],vel:[3.87,26.3]},
+    BX:{spend:[1.60,40673],units:[1.60,10994],cv:[0.64,19.3],zero:[0.19,0.0076],vel:[1.25,8.5]},
+    BY:{spend:[1.55,39218],units:[1.59,10905],cv:[1.01,30.5],zero:[0.54,0.0210],vel:[1.28,8.7]},
+    BZ:{spend:[1.61,40757],units:[1.82,12535],cv:[1.69,50.9],zero:[1.72,0.0672],vel:[1.58,10.7]},
+    CX:{spend:[0.62,15755],units:[0.61,4230],cv:[0.67,20.1],zero:[0.95,0.0369],vel:[0.67,4.5]},
+    CY:{spend:[0.53,13400],units:[0.49,3362],cv:[1.05,31.6],zero:[2.18,0.0852],vel:[0.52,3.5]},
+    CZ:{spend:[0.50,12610],units:[0.54,3729],cv:[1.75,52.7],zero:[4.16,0.1623],vel:[0.57,3.9]}
+  },
+  top: [["FOODS_3_607","AZ",134271,-5504],["FOODS_3_090","AY",122293,-7756],["FOODS_3_245","AZ",69715,-885],["FOODS_3_455","AZ",68961,-3095],["FOODS_3_318","AZ",66165,-4587],["FOODS_3_030","AZ",62710,-1330],["FOODS_3_281","AZ",60790,-1796],["FOODS_3_134","AZ",17222,23062],["FOODS_3_787","AZ",39271,-517],["HOUSEHOLD_1_053","AY",-1199,39653]],
+  // FOODS_3_090: [periodo, vendido, sin faltantes, dinero]
+  art: [[5,22187,22187,28399],[6,26985,26985,34541],[7,26772,26772,34268],[8,28688,28688,36823],[9,23697,25641,30332],[10,20348,21866,27457],[11,18113,18113,25409],[12,17395,17395,24902],[13,17581,17581,24879],[14,16063,16063,22853],[15,19445,19445,25342],[16,19839,19839,26133],[17,19694,19694,25992],[18,19921,19921,26778],[19,19580,19580,25120],[20,24273,24273,30341],[21,26489,26489,33111],[22,21104,21104,27209],[23,18365,18365,24940],[24,17745,18754,24133],[25,17260,17260,23756],[26,17388,17388,23707],[27,17607,17607,24298],[28,18296,18296,25248],[29,16486,16486,22750],[30,45473,45473,45549],[31,28741,28741,31123],[32,17895,17895,24609],[33,10834,21665,10984],[34,10640,22000,14423],[35,15975,15975,22866],[36,2035,13064,2889],[37,12339,15183,17760],[38,15357,15357,22095],[39,8556,14080,11949],[40,7507,14306,10701],[41,16248,16248,23218],[42,14647,14647,20930],[43,15294,15294,21855],[44,16679,16679,23847],[45,14426,14426,21012],[46,12385,16064,17968],[47,867,14306,1241],[48,16424,16424,23955],[49,5626,14800,8187],[50,9806,14843,14312],[51,14980,14980,21855],[52,10625,15778,15492],[53,5399,15300,7870],[54,17147,17147,25019],[55,15815,15815,23075],[56,15914,15914,23221],[57,15537,15537,22666],[58,15089,15089,22190],[59,14051,14051,20724],[60,47,12238,47],[61,13459,14811,20328],[62,15339,15339,23195],[63,15834,15834,23962],[64,15157,15157,22960],[65,15387,15387,23539]],
+  artF: [15630,15388,16336,15942,15657,14930,15556,14499,13252,14114,15485,15480,15328],
+  artB: [14306,16248,14647,15294,16679,14426,16064,14306,16424,14800,14843,14980,15778],
+  artImp: {demand:287461, exModel:6286, exNaive:128579, loModel:7756, loNaive:0},
+  items: [
+["FOODS_3_586","AX",1119134,13.7,4.9,431,0],["FOODS_3_202","AX",944782,22.7,6.8,-81,0],["FOODS_3_252","AX",644478,18,9.8,-7403,1],["FOODS_3_555","AX",595693,19.9,5,2499,0],["FOODS_3_694","AX",476481,11.9,5.5,3337,0],["FOODS_3_714","AX",462410,21,8.9,10378,0],["FOODS_3_226","AX",445382,13.1,5.8,4433,0],["HOUSEHOLD_1_072","AX",444358,14.4,6.2,8692,0],["HOUSEHOLD_1_272","AX",428544,17.3,7.8,-351,0],["FOODS_2_197","AX",411331,23.5,8.8,19207,0],["FOODS_3_099","AX",408348,12,6.2,2555,0],["FOODS_3_377","AX",325218,9.5,4.2,778,0],["FOODS_3_136","AX",322812,21.1,6.9,1671,0],["FOODS_3_080","AX",322452,17.5,4.3,3897,0],["FOODS_3_469","AX",310868,19.3,6.5,14933,0],
+["FOODS_3_090","AY",1107543,41.6,5.2,114538,0],["FOODS_3_120","AY",979747,40.2,8.1,36901,0],["FOODS_2_244","AY",441064,31.2,9.1,17409,0],["HOUSEHOLD_1_535","AY",437866,33.6,8.3,17374,0],["FOODS_3_574","AY",414836,41.7,7.6,7922,0],["FOODS_2_276","AY",388780,31.5,10.4,13667,0],["HOUSEHOLD_1_110","AY",385155,29.4,7.3,29378,1],["FOODS_1_012","AY",367198,34,4.1,-172,0],["FOODS_3_476","AY",352714,34.5,6.6,24629,0],["FOODS_3_546","AY",342582,34.6,9.2,15015,0],["FOODS_2_183","AY",333250,29.8,8.8,993,0],["HOUSEHOLD_1_053","AY",333245,35.6,5.9,38454,0],["HOBBIES_1_147","AY",314095,33.7,8.2,3538,0],["FOODS_3_723","AY",305549,35.1,6.7,18295,0],["HOUSEHOLD_1_427","AY",298239,38.6,12.6,24375,0],
+["FOODS_3_587","AZ",668915,51.2,7.2,10103,0],["FOODS_3_607","AZ",396186,52.8,13.2,128767,0],["FOODS_1_096","AZ",364129,65.5,8.2,28448,0],["FOODS_3_124","AZ",286777,49.7,8.4,18982,0],["FOODS_3_702","AZ",278544,53.6,17.9,9698,0],["FOODS_3_318","AZ",278461,47.3,10.7,61577,0],["FOODS_3_231","AZ",274118,54.4,13.3,18866,0],["FOODS_3_362","AZ",273751,62.7,16,12005,0],["FOODS_3_783","AZ",272474,52.2,11.3,26882,0],["FOODS_2_029","AZ",266058,86.8,12.4,30254,0],["FOODS_3_154","AZ",247647,72.9,15.6,4051,0],["FOODS_3_753","AZ",243832,48.2,11.6,20254,0],["HOBBIES_1_236","AZ",238948,46.2,9.4,27841,0],["FOODS_3_134","AZ",238883,48.8,7,40284,0],["FOODS_3_455","AZ",236724,56.9,15,65866,0]],
+  totalSpend: 137341063,
+  hist: [[47,5725,5],[5725,11404,6],[11404,17082,23],[17082,22760,19],[22760,28438,5],[28438,34117,2],[34117,39795,0],[39795,45473,1]],
+  mean:16538.6, sigma:7047.3
+};
+const SEGS=["AX","AY","AZ"];
+const DT = SEGS.reduce((s,k)=>s+D.demand[k],0);
+const ABC={A:"Vitales",B:"Útiles",C:"Complementarios"}, XYZ={X:"continuos",Y:"recurrentes",Z:"ocasionales"};
+const SEGCOL={X:"var(--sx)",Y:"var(--sy)",Z:"var(--sz)"};
+const cellName=c=>ABC[c[0]]+" "+XYZ[c[1]];
+
+/* ===================== formato (una escala por bloque) ===================== */
+const grp=s=>s.replace(/\B(?=(\d{3})+(?!\d))/g,".");
+const fInt=n=>(n<0?"−":"")+grp(String(Math.round(Math.abs(n))));
+const fDec=(x,d)=>{const p=Math.abs(x).toFixed(d).split(".");return (x<0&&Math.abs(x)>=Math.pow(10,-d)/2?"−":"")+grp(p[0])+(d?","+p[1]:"")};
+const fM=v=>fDec(v/1e6,2)+" M US$";
+const fK=v=>fInt(v/1e3)+" mil US$";
+const fKn=v=>fInt(v/1e3);
+const fP=(x,d=0)=>fDec(x*100,d)+" %";
+const blockDate=b=>{const d=new Date(Date.UTC(2011,5,27)+(b-2)*28*864e5);return d};
+const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const fDate=b=>{const d=blockDate(b);return d.getUTCDate()+" "+MES[d.getUTCMonth()]+" "+d.getUTCFullYear()};
+
+/* ===================== cálculo de impacto al mismo % de demanda ===================== */
+function totalCurve(k){return D.curves.AX[k].map((p,i)=>{let ex=0,lo=0;SEGS.forEach(s=>{ex+=D.curves[s][k][i][1];lo+=D.curves[s][k][i][2]});return {z:p[0],ex,lo,sv:1-lo/DT}})}
+const TC={m:totalCurve("m"),n:totalCurve("n")};
+function atService(k,s){const c=TC[k];for(let i=0;i<c.length-1;i++){if(s>=c[i].sv&&s<=c[i+1].sv){const t=(s-c[i].sv)/(c[i+1].sv-c[i].sv);return {i,t,z:c[i].z+t*(c[i+1].z-c[i].z),ex:c[i].ex+t*(c[i+1].ex-c[i].ex),lo:c[i].lo+t*(c[i+1].lo-c[i].lo)}}}return null}
+function segAt(k,seg,i,t){const a=D.curves[seg][k][i],b=D.curves[seg][k][i+1];return a[1]+t*(b[1]-a[1])}
+function impactAt(s){const m=atService("m",s),n=atService("n",s);const segs=SEGS.map(g=>({g,save:segAt("n",g,n.i,n.t)-segAt("m",g,m.i,m.t)}));return {m,n,save:n.ex-m.ex,pct:(n.ex-m.ex)/n.ex,segs}}
+
+/* ===================== utilidades SVG ===================== */
+const NS="http://www.w3.org/2000/svg";
+function el(tag,a,p){const e=document.createElementNS(NS,tag);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+function txt(p,x,y,s,cls,anchor){const t=el("text",{x,y,class:cls||"tick","text-anchor":anchor||"middle"},p);t.textContent=s;return t}
+function frame(host,c){host.innerHTML="";const W=c.w||760,H=c.h||270,m={l:c.ml||58,r:16,t:16,b:30};
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart",role:"img","aria-label":c.label||""},host);
+  const X=v=>m.l+(v-c.x0)/(c.x1-c.x0)*(W-m.l-m.r), Y=v=>H-m.b-(v-c.y0)/(c.y1-c.y0)*(H-m.t-m.b);
+  c.yTicks.forEach(v=>{el("line",{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),class:"grid"},s);txt(s,m.l-8,Y(v)+4,c.yFmt(v),"tick","end")});
+  c.xTicks.forEach(v=>txt(s,X(v[0]),H-m.b+18,v[1]));
+  if(c.yTitle)txt(s,m.l,10,c.yTitle,"lbl","start");
+  return {s,X,Y,W,H,m}}
+function path(F,pts,attrs){const segs=[];let cur=[];pts.forEach(p=>{if(p[1]==null){if(cur.length)segs.push(cur);cur=[]}else cur.push(p)});if(cur.length)segs.push(cur);
+  segs.forEach(sg=>el("path",Object.assign({d:sg.map((p,i)=>(i?"L":"M")+F.X(p[0]).toFixed(1)+","+F.Y(p[1]).toFixed(1)).join(""),fill:"none","stroke-linejoin":"round","stroke-linecap":"round"},attrs),F.s))}
+
+/* ===================== navegación ===================== */
+const PAGES=["inicio","segmentos","detalle","articulo","detalleart","impacto","glosario"];
+function show(id){if(!PAGES.includes(id))id="inicio";document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active",p.id===id));
+  document.querySelectorAll(".navbtn").forEach(b=>b.setAttribute("aria-current",b.dataset.go===({detalle:"segmentos",detalleart:"articulo",detalleimp:"impacto"}[id]||id)?"page":"false"));
+  if(location.hash!=="#"+id)history.replaceState(null,"","#"+id);window.scrollTo(0,0);if(id==="articulo")drawArt();if(id==="impacto")drawCurve();if(id==="inicio")requestAnimationFrame(drawNet);if(id==="detalle"){if(SEGS.includes(selCell))detSeg=selCell;drawDetail()}if(id==="detalleart")drawArtDet()}
+document.addEventListener("click",e=>{const g=e.target.closest("[data-go]");if(g){show(g.dataset.go)}});
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+
+/* paneles técnicos */
+function setTech(btn,open){btn.setAttribute("aria-expanded",open);const panel=btn.dataset.target?document.getElementById(btn.dataset.target):btn.nextElementSibling;if(panel)panel.classList.toggle("open",open);
+  const lbl=btn.childNodes[0];if(!btn.dataset.target&&lbl.nodeType===3)lbl.nodeValue=open?"Ocultar detalle técnico ":"Ver detalle técnico ";
+  if(btn.dataset.target&&lbl.nodeType===3)lbl.nodeValue=open?"Ocultar la tabla ":"Ver la tabla "}
+document.querySelectorAll(".tech-btn").forEach(b=>b.addEventListener("click",()=>{setTech(b,b.getAttribute("aria-expanded")!=="true");drawArt();drawCurve()}));
+const notesBtn=document.getElementById("notesBtn");
+notesBtn.addEventListener("click",()=>{const on=notesBtn.getAttribute("aria-pressed")!=="true";notesBtn.setAttribute("aria-pressed",on);document.body.classList.toggle("notes-off",!on);document.getElementById("notesLbl").textContent=on?"visibles":"ocultas"});
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),3200)}
+
+/* ===================== INICIO: red de fondo ===================== */
+function drawNet(){const cv=document.getElementById("net");if(!cv||!cv.offsetParent)return;const r=cv.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  cv.width=r.width*dpr;cv.height=r.height*dpr;const g=cv.getContext("2d");g.scale(dpr,dpr);
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const pts=Array.from({length:70},()=>[rnd()*r.width,rnd()*r.height]);
+  g.strokeStyle="rgba(43,182,227,.13)";g.lineWidth=1;
+  pts.forEach((p,i)=>pts.slice(i+1).forEach(q=>{const d=Math.hypot(p[0]-q[0],p[1]-q[1]);if(d<r.width*0.16){g.beginPath();g.moveTo(p[0],p[1]);g.lineTo(q[0],q[1]);g.stroke()}}));
+  g.fillStyle="rgba(43,182,227,.45)";pts.forEach(p=>{g.beginPath();g.arc(p[0],p[1],2,0,7);g.fill()})}
+window.addEventListener("resize",drawNet);
+
+/* ===================== SEGMENTOS: burbujas ===================== */
+let selCell="AX",sizeMode="spend";
+const FAM=["A","B","C"],LV=["X","Y","Z"],SEGHEX={X:"#4f8ff7",Y:"#2fb586",Z:"#a07cf2"};
+const famInfo=a=>{const cs=LV.map(x=>a+x);return {n:cs.reduce((s,c)=>s+D.matrix[c][0],0),sp:cs.reduce((s,c)=>s+D.matrix[c][1],0)}};
+const BW=760,BH=600;let bub=null;
+const FAMDEF={A:["Vitales","Los pocos artículos que más pesan: juntos suman el primer 60 % de la venta. Si faltan en el anaquel, se nota en la caja."],
+  B:["Útiles","Artículos de aporte medio: llevan la venta acumulada del 60 % al 84 %."],
+  C:["Complementarios","Los muchos artículos que completan el surtido: cada uno vende poco y juntos suman el 16 % restante de la venta."]};
+const LVDEF={X:["continuo","su venta es pareja de un periodo a otro (variabilidad baja). Es el más fácil de prever."],
+  Y:["recurrente","su venta vuelve, pero con altibajos (variabilidad intermedia)."],
+  Z:["ocasional","su venta da saltos fuertes de un periodo a otro (variabilidad alta). Es el más difícil de prever."]};
+const SING={A:"vital",B:"útil",C:"complementario"};
+function tipShow(e,html,tid,cid){const t=document.getElementById(tid||"bubTip"),card=document.getElementById(cid||"bubCard").getBoundingClientRect();t.innerHTML=html;t.classList.add("show");
+  let x=e.clientX-card.left+14,y=e.clientY-card.top+14;const w=t.offsetWidth,hh=t.offsetHeight;if(x+w>card.width-8)x=e.clientX-card.left-w-14;if(y+hh>card.height-8)y=e.clientY-card.top-hh-14;t.style.left=Math.max(8,Math.min(x,card.width-w-8))+"px";t.style.top=Math.max(8,y)+"px"}
+function tipHide(tid){document.getElementById(tid||"bubTip").classList.remove("show")}
+function bubTipHtml(c){const [n,sp]=D.matrix[c],a=c[0],x=c[1],nm=SING[a][0].toUpperCase()+SING[a].slice(1)+" "+LVDEF[x][0];
+  return `<b>Artículo ${SING[a]} ${LVDEF[x][0]}</b>Es ${a==="A"?"de los pocos que más pesan en la venta":a==="B"?"de aporte medio a la venta":"de los muchos que completan el surtido"} y ${LVDEF[x][1]}<span class="k">${fInt(n)} artículos · ${fM(sp)} de venta${D.forecasted[c]?" · con pronóstico":""} · clic para ver su perfil</span>`}
+function buildBubbles(){const host=document.getElementById("bubbles");host.innerHTML="";
+  const s=el("svg",{viewBox:`0 0 ${BW} ${BH}`,class:"chart bubbles",role:"group","aria-label":"Grupos del catálogo"},host);
+  const defs=el("defs",{},s);
+  LV.forEach(x=>{const g=el("radialGradient",{id:"gr"+x,cx:"35%",cy:"30%",r:"75%"},defs);
+    const SH={X:["#a9cbff","#4f8ff7","#2d5fbf"],Y:["#8fe3c3","#2fb586","#1b7a58"],Z:["#d3c1ff","#a07cf2","#6c4cc0"]}[x];
+    el("stop",{offset:"0%","stop-color":SH[0]},g);el("stop",{offset:"45%","stop-color":SH[1]},g);el("stop",{offset:"100%","stop-color":SH[2]},g);
+    const g2=el("radialGradient",{id:"sh"+x,cx:"50%",cy:"50%",r:"50%"},defs);el("stop",{offset:"70%","stop-color":"#000","stop-opacity":0},g2);el("stop",{offset:"100%","stop-color":"#000","stop-opacity":.35},g2)});
+  const blur=el("filter",{id:"soft",x:"-30%",y:"-30%",width:"160%",height:"160%"},defs);el("feGaussianBlur",{stdDeviation:6},blur);
+  bub={halo:{},fam:{},node:{}};
+  FAM.forEach((a,i)=>{const g=el("g",{class:"halo-g"},s),f=el("g",{class:"float"},g);f.style.animationDuration=(11+i*2)+"s";f.style.animationName="floatC";
+    bub.halo[a]={g,c:el("circle",{class:"halo",cx:0,cy:0},f)};
+    g.addEventListener("mousemove",e=>{if(!e.target.closest(".bub"))tipShow(e,`<b>${FAMDEF[a][0]}</b>${FAMDEF[a][1]}<span class="k">${fInt(famInfo(a).n)} artículos · ${fM(famInfo(a).sp)} de venta</span>`)});
+    g.addEventListener("mouseleave",tipHide)});
+  FAM.forEach(a=>{const lg=el("g",{class:"fam-g"},s);txt(lg,0,0,ABC[a],"fam-name");const t2=txt(lg,0,20,"","fam-sub");if(a==="A")txt(lg,0,39,"CON PRONÓSTICO","fam-tag");bub.fam[a]={g:lg,t2}});
+  const anim=["floatA","floatB","floatC"];
+  FAM.forEach((a,i)=>LV.forEach((x,j)=>{const c=a+x,g=el("g",{class:"bub",tabindex:0,role:"button","aria-label":cellName(c)},bub.halo[a].g.querySelector(".float"));
+    const f=el("g",{class:"float"},g);f.style.animationName=anim[(i+j)%3];f.style.animationDuration=(6.5+((i*3+j)*1.7)%4.5).toFixed(1)+"s";f.style.animationDelay=(-((i*5+j*3)%7)).toFixed(1)+"s";
+    const lift=el("g",{class:"lift"},f);
+    const sh=el("circle",{class:"shadow",cx:0,cy:0,filter:"url(#soft)"},lift);
+    const ci=el("circle",{class:"ball",cx:0,cy:0,fill:SEGHEX[x],stroke:SEGHEX[x]},lift);
+    const t1=txt(lift,0,0,XYZ[x],"bub-name"),t2=txt(lift,0,0,"","bub-val");t1.style.fill={X:"#b9d3ff",Y:"#a6ead0",Z:"#d9caff"}[x];
+    const pick=()=>{selCell=c;updateSel();drawPanel()};
+    g.addEventListener("click",pick);g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick()}});
+    g.addEventListener("mousemove",e=>{e.stopPropagation();tipShow(e,bubTipHtml(c))});
+    g.addEventListener("focus",()=>{const r=g.getBoundingClientRect();tipShow({clientX:r.right,clientY:r.top},bubTipHtml(c))});g.addEventListener("blur",tipHide);
+    bub.node[c]={g,ci,sh,t1,t2}}));
+  layoutBubbles();updateSel()}
+function layoutBubbles(){const val=c=>sizeMode==="spend"?D.matrix[c][1]:D.matrix[c][0],pad=5;
+  function cluster(a,k){const rs=LV.map(x=>k*Math.sqrt(val(a+x))),[r1,r2,r3]=rs;
+    const d=r1+r2+pad,a13=r1+r3+pad,a23=r2+r3+pad,x3=(a13*a13-a23*a23+d*d)/(2*d),y3=Math.sqrt(Math.max(0,a13*a13-x3*x3));
+    let pts=[[0,0],[d,0],[x3,y3]];
+    const ext=(f,s)=>f(...pts.map((p,i)=>p[s]+(f===Math.min?-rs[i]:rs[i])));
+    const cx=(ext(Math.min,0)+ext(Math.max,0))/2,cy=(ext(Math.min,1)+ext(Math.max,1))/2;pts=pts.map(p=>[p[0]-cx,p[1]-cy]);
+    return {rs,pts,R:Math.max(...pts.map((p,i)=>Math.hypot(p[0],p[1])+rs[i]))+12}}
+  const P=14,LAB=50,LABA=64;let k=1;
+  for(let it=0;it<6;it++){const [A,B,C]=FAM.map(a=>cluster(a,k));
+    const kw=(BW-3*P)/(2*A.R+2*Math.max(B.R,C.R)),kh1=(BH-LABA-P)/(2*A.R),kh2=(BH-2*LAB-2*P)/(2*B.R+2*C.R);k*=Math.min(kw,kh1,kh2)}
+  const cl=FAM.map(a=>cluster(a,k)),[A,B,C]=cl,rx=Math.max(B.R,C.R);
+  const free=BW-2*A.R-2*rx,ax=free/3+A.R,bx=BW-free/3-rx;
+  const restH=BH-2*B.R-2*C.R-2*LAB,by=restH/3+B.R,cyC=by+B.R+LAB+restH/3+C.R;
+  const POS={A:[ax,(BH-LABA)/2],B:[bx,by],C:[bx,cyC]};
+  FAM.forEach((a,i)=>{const c=cl[i],[cx,cy]=POS[a];
+    bub.halo[a].g.style.transform=`translate(${cx}px,${cy}px)`;bub.halo[a].c.style.r=c.R+"px";
+    bub.fam[a].g.style.transform=`translate(${cx}px,${cy+c.R+24}px)`;
+    const fi=famInfo(a);bub.fam[a].t2.textContent=`${fInt(fi.n)} artículos · ${fM(fi.sp)}`;
+    LV.forEach((xx,j)=>{const nd=bub.node[a+xx],r=c.rs[j],fs=Math.max(11,Math.min(16,r/3.8));nd.t1.style.display=r<34?"none":"";
+      nd.g.style.transform=`translate(${c.pts[j][0]}px,${c.pts[j][1]}px)`;nd.ci.style.r=r+"px";nd.sh.style.r=(r*0.92)+"px";nd.sh.setAttribute("cy",(r*0.16).toFixed(1));
+      nd.t1.style.fontSize=fs+"px";nd.t1.setAttribute("y",(-fs*0.2).toFixed(1));
+      nd.t2.style.fontSize=(fs*1.2)+"px";nd.t2.setAttribute("y",(r<34?fs*0.4:fs*1.1).toFixed(1));
+      nd.t2.textContent=sizeMode==="spend"?fDec(D.matrix[a+xx][1]/1e6,1)+" M":fInt(D.matrix[a+xx][0])})});
+  const share=famInfo("A");
+  document.getElementById("sizeHint").textContent=sizeMode==="spend"
+    ?`Tamaño = venta de 2011 a 2015. Los Vitales son el ${fP(share.n/2887)} de los artículos clasificados, pero hacen el ${fP(share.sp/D.totalSpend)} de esa venta.`
+    :`Tamaño = número de artículos. Los Complementarios son la mitad del catálogo clasificado (${fInt(famInfo("C").n)} de 2.887), aunque venden poco cada uno.`}
+function updateSel(){Object.entries(bub.node).forEach(([c,nd])=>{nd.g.classList.toggle("sel",c===selCell);nd.g.setAttribute("aria-pressed",c===selCell)})}
+document.querySelectorAll("[data-size]").forEach(b=>b.addEventListener("click",()=>{sizeMode=b.dataset.size;document.querySelectorAll("[data-size]").forEach(x=>x.setAttribute("aria-pressed",x===b));layoutBubbles()}));
+
+/* panel del grupo: frase + radar + barras */
+const radarOn={AX:true,AY:true,AZ:true};
+const GMED={spend:25378,units:6878,cv:30.14,zero:0.0390,vel:6.78};
+const VDEF={spend:["Venta en dinero","Unidades × precio de venta, sumadas en las 10 tiendas de 2011 a 2015.",v=>fInt(v)+" US$"],
+  units:["Unidades vendidas","Unidades vendidas de 2011 a 2015, dentro de la vida del artículo (de su primera a su última venta).",v=>fInt(v)+" u."],
+  cv:["Variabilidad de la venta","Coeficiente de variación (CV): desviación ÷ media de la venta por periodo, sin contar días de faltante. Más alto = venta más irregular.",v=>fDec(v,1)+" %"],
+  zero:["Días sin venta","Porcentaje de los días con producto disponible en que no se vendió nada.",v=>fDec(v*100,1)+" % de los días"],
+  vel:["Unidades por día","Unidades vendidas ÷ días con producto disponible: lo que vende en un día típico.",v=>fDec(v,1)+" u. por día"]};
+function varTip(c,k){const r=D.radar[c][k];return `<b>${VDEF[k][0]}</b>${VDEF[k][1]}<span class="k">${cellName(c)} (mediana): <b style="display:inline;color:var(--text)">${VDEF[k][2](r[1])}</b><br>Artículo típico del catálogo: ${VDEF[k][2](GMED[k])} · ${fDec(r[0],1)}× la del catálogo</span>`}
+const AXES=[["spend","Venta"],["units","Unidades"],["cv","Variabilidad"],["zero","Días sin venta"],["vel","Unidades por día"]];
+function times(v){return v>=1.15?`${fDec(v,1)} veces más que`:v<=0.87?`${fDec(1/v,1)} veces menos que`:"lo mismo que"}
+function selColor(c){return D.forecasted[c]?SEGHEX[c[1]]:"#e8eef7"}
+function drawRadar(host,c){const W=480,H=330,cx=W/2,cy=H/2+4,R=118,MAX=5;host.innerHTML="";
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart",role:"img","aria-label":"Radar de "+cellName(c)},host);
+  const ang=i=>-Math.PI/2+i*2*Math.PI/AXES.length,pt=(i,v)=>[cx+Math.cos(ang(i))*R*Math.min(v,MAX)/MAX,cy+Math.sin(ang(i))*R*Math.min(v,MAX)/MAX];
+  const ring=v=>AXES.map((_,i)=>pt(i,v).join(",")).join(" ");
+  [1,2,3,4,5].forEach(k=>el("polygon",{points:ring(k),fill:"none",stroke:"var(--line)"},s));
+  AXES.forEach((a,i)=>{const [x,y]=pt(i,MAX);el("line",{x1:cx,y1:cy,x2:x,y2:y,stroke:"var(--line)"},s);
+    const [lx,ly]=pt(i,MAX*(i===0?1.22:1.16));txt(s,lx,ly+4,a[1],"lbl",Math.abs(lx-cx)<12?"middle":lx<cx?"end":"start")});
+  [1,3].forEach(k=>txt(s,cx+5,cy-R*k/MAX-3,k+"×","tick","start"));
+  el("polygon",{points:ring(1),fill:"none",stroke:"#fff","stroke-opacity":.55,"stroke-dasharray":"3 3","stroke-width":1.4},s);
+  const poly=(cell,attrs)=>el("polygon",Object.assign({points:AXES.map((a,i)=>pt(i,D.radar[cell][a[0]][0]).join(",")).join(" ")},attrs),s);
+  SEGS.forEach(v=>{if(v!==c&&radarOn[v])poly(v,{fill:"none",stroke:SEGHEX[v[1]],"stroke-width":1.8})});
+  const col=selColor(c);poly(c,{fill:col,"fill-opacity":.28,stroke:col,"stroke-width":2.8,"stroke-linejoin":"round"});
+  const series=[[c,col],...SEGS.filter(v=>v!==c&&radarOn[v]).map(v=>[v,SEGHEX[v[1]]])];
+  const hl=el("g",{},s);const step=2*Math.PI/AXES.length;
+  AXES.forEach((a,i)=>{const a0=ang(i)-step/2,a1=ang(i)+step/2,RR=R*1.25;
+    const wedge=el("path",{d:`M${cx},${cy} L${cx+Math.cos(a0)*RR},${cy+Math.sin(a0)*RR} A${RR},${RR} 0 0 1 ${cx+Math.cos(a1)*RR},${cy+Math.sin(a1)*RR} Z`,fill:"transparent",style:"cursor:crosshair"},s);
+    wedge.addEventListener("mousemove",e=>{hl.innerHTML="";const [x2,y2]=pt(i,MAX);el("line",{x1:cx,y1:cy,x2,y2,stroke:"#fff","stroke-opacity":.5,"stroke-width":1.5},hl);
+      series.forEach(([v,cl])=>{const [x,y]=pt(i,D.radar[v][a[0]][0]);el("circle",{cx:x,cy:y,r:4,fill:cl,stroke:"#0a1120","stroke-width":1.5},hl)});
+      tipShow(e,`<b>${VDEF[a[0]][0]}</b>${series.map(([v,cl])=>`<span style="display:flex;justify-content:space-between;gap:12px;margin-top:4px"><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${cl};margin-right:6px"></i>${cellName(v)}</span><span class="num"><b style="display:inline;font-size:13px">${VDEF[a[0]][2](D.radar[v][a[0]][1])}</b> · ${fDec(D.radar[v][a[0]][0],1)}×</span></span>`).join("")}<span class="k">Artículo típico del catálogo: ${VDEF[a[0]][2](GMED[a[0]])} (1×)</span>`,"panelTip","segPanel")});
+    wedge.addEventListener("mouseleave",()=>{hl.innerHTML="";tipHide("panelTip")})})}
+function drawPanel(){const c=selCell,r=D.radar[c],[n,sp]=D.matrix[c],p=document.getElementById("segPanel"),col=selColor(c);
+  const cvTxt=r.cv[0]<0.85?"más pareja que la del artículo típico":r.cv[0]>1.2?"con saltos más fuertes que la del artículo típico":"con altibajos parecidos a los del artículo típico";
+  const bars=[["Venta en dinero",r.spend[0],"spend"],["Unidades vendidas",r.units[0],"units"],["Variabilidad de la venta",r.cv[0],"cv"],["Días sin venta",r.zero[0],"zero"],["Unidades por día",r.vel[0],"vel"]],MAX=4.8;
+  const others=SEGS.filter(v=>v!==c);
+  p.innerHTML=`<div class="card-head"><div><h2>${cellName(c)}</h2><span class="muted small num">${fInt(n)} artículos · ${fM(sp)} de venta</span></div>
+      <button class="btn sm icon-btn" data-go="detalle"><i class="ico">i</i>Detalle</button></div>
+    <p>Un artículo típico de este grupo vende <b>${times(r.spend[0])}</b> el artículo típico del catálogo. Su venta es <b>${cvTxt}</b> y pasa sin vender el <b>${fDec(r.zero[1]*100,1)} %</b> de los días.</p>
+    ${D.forecasted[c]?`<p class="muted small">Con pronóstico: <b style="color:var(--text)">${D.forecasted[c]} de ${n}</b> · política sugerida: <b style="color:var(--text)">${D.policy[c]}</b></p>`:`<p class="muted small">Este grupo no se pronostica. El radar lo compara con los tres grupos Vitales, que sí se pronostican.</p>`}
+    <div class="legend" id="radarLegend">
+      <span class="lg" style="cursor:default"><i style="background:${col};height:8px"></i>${cellName(c)}</span>
+      ${others.map(v=>`<button class="lg" data-radar="${v}" aria-pressed="${radarOn[v]}"><i style="background:${SEGHEX[v[1]]}"></i>${cellName(v)}</button>`).join("")}
+      <span class="lg" style="cursor:default"><i style="background:repeating-linear-gradient(90deg,#fff 0 3px,transparent 3px 6px)"></i>Artículo típico (1×)</span>
+    </div>
+    <div id="radar"></div>
+    <p class="tech-label">Frente al artículo típico del catálogo</p>
+    <div style="display:flex;flex-direction:column;gap:9px">${bars.map(([l,v,k])=>`<div class="hbar"><span>${l}<button class="qi" data-var="${k}" aria-label="Qué mide ${l}">?</button></span><span class="track"><span class="fill" style="width:${Math.min(v,MAX)/MAX*100}%;background:${col}"></span><span class="ref" style="left:${1/MAX*100}%"></span></span><span class="val num">${fDec(v,1)}×</span></div>`).join("")}</div>
+    <div class="note">Vuelve el radar, que compara este grupo con los tres Vitales, y se conservan las barras. Al pasar el cursor por un punto del radar o por un "?" aparece qué mide la variable y su valor real.</div>
+    <div class="tip" id="panelTip" role="tooltip"></div>`;
+  p.querySelectorAll(".qi").forEach(q=>{const k=q.dataset.var;const sh=e=>tipShow(e,varTip(c,k),"panelTip","segPanel");
+    q.addEventListener("mousemove",sh);q.addEventListener("mouseleave",()=>tipHide("panelTip"));
+    q.addEventListener("focus",()=>{const b=q.getBoundingClientRect();sh({clientX:b.right,clientY:b.bottom})});q.addEventListener("blur",()=>tipHide("panelTip"));
+    q.addEventListener("click",e=>{e.preventDefault();const b=q.getBoundingClientRect();sh({clientX:b.right,clientY:b.bottom})})});
+  drawRadar(document.getElementById("radar"),c);
+  p.querySelectorAll("[data-radar]").forEach(b=>b.addEventListener("click",()=>{radarOn[b.dataset.radar]=!radarOn[b.dataset.radar];drawPanel()}))}
+
+/* embudo */
+function drawFunnel(){const host=document.getElementById("funnel");host.innerHTML="";
+  const st=[[30490,"combinaciones tienda × artículo","10 tiendas × 3.049 artículos"],[3049,"artículos","ventas sumadas de las 10 tiendas"],[592,"Vitales","el primer 60 % de la venta"],[517,"con pronóstico","los Vitales que pasan los filtros"]];
+  const W=700,rowH=58,H=st.length*rowH+8,maxW=380,minW=120,cx=200;
+  const s=el("svg",{viewBox:`0 0 ${W} ${H}`,class:"chart funnel-svg",role:"img","aria-label":"Embudo del catálogo"},host);
+  const w=n=>minW+(Math.log10(n)-2.6)/(Math.log10(30490)-2.6)*(maxW-minW);
+  st.forEach(([n,l,sub],i)=>{const y=4+i*rowH,w1=w(n),w2=i<st.length-1?w(st[i+1][0]):w(n)*0.94;
+    el("path",{d:`M${cx-w1/2},${y} L${cx+w1/2},${y} L${cx+w2/2},${y+rowH-6} L${cx-w2/2},${y+rowH-6} Z`,fill:i===st.length-1?"var(--accent)":`rgba(43,182,227,${0.35+i*0.12})`},s);
+    txt(s,cx,y+rowH/2+3,fInt(n),"stage-n");
+    txt(s,cx+maxW/2+24,y+rowH/2-4,l,"stage-l","start");txt(s,cx+maxW/2+24,y+rowH/2+14,sub,"stage-s","start")})}
+
+/* ===================== DETALLE DE SEGMENTOS ===================== */
+let detSeg="AX",detSort={k:2,dir:-1};
+const CMP={AX:[191,26.21,18.9,7.5,12.8,0.600,0.951],AY:[229,32.18,23.2,9.7,18.5,0.435,0.812],AZ:[97,13.85,10.0,11.5,27.3,0.425,0.834],T:[517,72.25,52.2,9.3,18.4,0.495,0.868]};
+function drawDetail(){document.getElementById("detTabs").innerHTML=SEGS.map(v=>`<button class="btn sm" data-det="${v}" aria-pressed="${v===detSeg}"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${SEGHEX[v[1]]}"></i>${cellName(v)}</button>`).join("");
+  const rows=[["Artículos pronosticados",0,v=>fInt(v)],["Venta de entrenamiento",1,v=>fDec(v,2)+" M US$"],["% de la venta de la cadena",2,v=>fDec(v,1)+" %"],["Error WAPE · pronóstico",3,v=>fDec(v,1)+" %"],["Error WAPE · línea base",4,v=>fDec(v,1)+" %"],["WRMSSE · pronóstico",5,v=>fDec(v,3)],["WRMSSE · línea base",6,v=>fDec(v,3)]];
+  const cols=[...SEGS,"T"];
+  document.getElementById("cmpTbl").innerHTML=`<thead><tr><th>Indicador</th>${cols.map(c=>`<th class="${c===detSeg?"hl":""}">${c==="T"?"Total":cellName(c)}</th>`).join("")}</tr></thead><tbody>${rows.map(([l,i,f])=>`<tr><td>${l}</td>${cols.map(c=>`<td class="${c===detSeg?"hl":""}">${f(CMP[c][i])}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  const list=D.items.filter(r=>r[1]===detSeg).slice().sort((a,b)=>detSort.dir*((a[detSort.k]>b[detSort.k])-(a[detSort.k]<b[detSort.k])));
+  document.getElementById("artListTitle").textContent=`Artículos de ${cellName(detSeg)} · 15 de ${D.forecasted[detSeg]}`;
+  const hd=[["Artículo",0],["Venta de train (mil US$)",2],["CV de train",3],["Error WAPE",4],["Ahorro (mil US$)",5]];
+  document.getElementById("artList").innerHTML=`<thead><tr>${hd.map(([l,k],i)=>`<th class="${i?"":"l"}"><button class="sort" data-sort="${k}">${l}${detSort.k===k?(detSort.dir<0?" ↓":" ↑"):""}</button></th>`).join("")}<th class="l">Revisión</th></tr></thead>
+   <tbody>${list.map(r=>`<tr><td><button class="btn sm" data-art="${r[0]}">${r[0]} <span class="arrow">→</span></button></td><td>${fKn(r[2])}</td><td>${fDec(r[3],1)} %</td><td>${fDec(r[4],1)} %</td><td class="${r[5]<0?"neg":""}">${fKn(r[5])}</td><td class="l">${r[6]?'<span class="flag">⚑ marcado</span>':""}</td></tr>`).join("")}</tbody>`}
+document.getElementById("detalle").addEventListener("click",e=>{const t=e.target.closest("[data-det]");if(t){detSeg=t.dataset.det;drawDetail();return}
+  const so=e.target.closest("[data-sort]");if(so){const k=+so.dataset.sort;detSort=detSort.k===k?{k,dir:-detSort.dir}:{k,dir:k===0?1:-1};drawDetail();return}
+  const a=e.target.closest("[data-art]");if(a){if(a.dataset.art==="FOODS_3_090")show("articulo");else toast("En el mockup solo FOODS_3_090 tiene ficha con datos.")}});
+
+/* ===================== ARTÍCULO ===================== */
+const artSeries=[
+  {k:"obs",name:"Lo que se vendió",color:"#d6deeb",on:true},
+  {k:"comp",name:"Venta sin faltantes (estimada)",color:"#8a9ab7",on:true},
+  {k:"fc",name:"Pronóstico",color:"#2bb6e3",on:true},
+  {k:"base",name:"Línea base",color:"#ff9f6e",on:true}
+];
+function drawLegend(){const lg=document.getElementById("artLegend");lg.innerHTML="";artSeries.forEach(s=>{const b=document.createElement("button");b.className="lg";b.setAttribute("aria-pressed",s.on);
+  b.innerHTML=`<i style="background:${s.color}"></i>${s.name}`;b.addEventListener("click",()=>{s.on=!s.on;drawLegend();drawArt()});lg.appendChild(b)})}
+function artRow(b){const r=D.art.find(x=>x[0]===b);const t=b>=53?b-53:-1;return {obs:r[1],comp:r[2],f:t>=0?D.artF[t]:null,base:t>=0?D.artB[t]:null}}
+let artZoom=false;
+document.addEventListener("click",e=>{const z=e.target.closest("[data-zoom]");if(!z)return;artZoom=z.dataset.zoom==="1";document.querySelectorAll("[data-zoom]").forEach(b=>b.setAttribute("aria-pressed",b===z));drawArt()});
+function drawArt(){const host=document.getElementById("artChart");if(!document.getElementById("articulo").classList.contains("active"))return;
+  const yrs=[[9,"2012"],[22,"2013"],[35,"2014"],[48,"2015"],[61,"2016"]];
+  const x0=artZoom?50.5:5,x1=artZoom?65.5:65,MESC=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  const xt=artZoom?[51,53,55,57,59,61,63,65].map(b=>{const d=blockDate(b);return [b,MESC[d.getUTCMonth()]+" "+String(d.getUTCFullYear()).slice(2)]}):yrs;
+  const F=frame(host,{w:1200,h:artZoom?360:340,ml:62,x0,x1,y0:0,y1:artZoom?20000:50000,yTicks:artZoom?[0,5000,10000,15000,20000]:[0,10000,20000,30000,40000,50000],yFmt:v=>v?fInt(v/1000)+" mil":"0",xTicks:xt,label:"Unidades por periodo de FOODS_3_090",yTitle:"unidades"});
+  const inR=pts=>pts.filter(p=>p[0]>=Math.ceil(x0)&&p[0]<=Math.floor(x1));
+  el("rect",{x:F.X(52.5),y:F.m.t,width:F.X(Math.min(65.4,x1))-F.X(52.5),height:F.H-F.m.t-F.m.b,class:"shade"},F.s);txt(F.s,F.X(58.9),F.m.t+14,"año de prueba","lbl");
+  if(document.getElementById("bandsChk").checked){const up=D.mean+3*D.sigma;el("rect",{x:F.X(5),y:F.Y(up),width:F.X(65)-F.X(5),height:F.Y(0)-F.Y(up),class:"band"},F.s);
+    el("line",{x1:F.X(5),x2:F.X(65),y1:F.Y(D.mean),y2:F.Y(D.mean),stroke:"#fff","stroke-opacity":.35,"stroke-dasharray":"2 4"},F.s);txt(F.s,F.X(6),F.Y(up)-4,"+3σ","lbl","start");txt(F.s,F.X(6),F.Y(D.mean)-4,"media","lbl","start")}
+  const on=k=>artSeries.find(s=>s.k===k).on;
+  if(on("comp"))path(F,inR(D.art.map(r=>[r[0],r[2]])),{stroke:"#8a9ab7","stroke-width":1.4,"stroke-dasharray":"3 4"});
+  if(on("obs"))path(F,inR(D.art.map(r=>[r[0],r[1]])),{stroke:"#d6deeb","stroke-width":1.6});
+  const mr=artZoom?4:2.6;
+  if(on("base")){path(F,D.artB.map((v,i)=>[53+i,v]),{stroke:"#ff9f6e","stroke-width":2,"stroke-dasharray":"6 4"});D.artB.forEach((v,i)=>el("rect",{x:F.X(53+i)-mr,y:F.Y(v)-mr,width:2*mr,height:2*mr,fill:"#ff9f6e",transform:`rotate(45 ${F.X(53+i)} ${F.Y(v)})`},F.s))}
+  if(on("fc")){path(F,D.artF.map((v,i)=>[53+i,v]),{stroke:"#2bb6e3","stroke-width":2.6});D.artF.forEach((v,i)=>el("circle",{cx:F.X(53+i),cy:F.Y(v),r:mr+.6,fill:"#2bb6e3",stroke:"#0a1120","stroke-width":1},F.s))}
+  /* etiqueta de datos al pasar el cursor */
+  const hov=el("g",{},F.s);
+  const ov=el("rect",{x:F.m.l,y:F.m.t,width:F.W-F.m.l-F.m.r,height:F.H-F.m.t-F.m.b,fill:"transparent",style:"cursor:crosshair"},F.s);
+  ov.addEventListener("mousemove",e=>{const box=F.s.getBoundingClientRect(),sx=(e.clientX-box.left)*F.W/box.width;
+    const b=Math.max(Math.ceil(x0),Math.min(65,Math.round(x0+(sx-F.m.l)/(F.W-F.m.l-F.m.r)*(x1-x0)))),r=artRow(b);hov.innerHTML="";
+    el("line",{x1:F.X(b),x2:F.X(b),y1:F.m.t,y2:F.H-F.m.b,stroke:"#fff","stroke-opacity":.35},hov);
+    const pts=[["obs",r.obs,"#d6deeb"],["comp",r.comp,"#8a9ab7"],["fc",r.f,"#2bb6e3"],["base",r.base,"#ff9f6e"]].filter(p=>p[1]!=null&&on(p[0]));
+    pts.forEach(p=>el("circle",{cx:F.X(b),cy:F.Y(p[1]),r:4,fill:p[2],stroke:"#0a1120","stroke-width":1.5},hov));
+    const name=k=>artSeries.find(s=>s.k===k).name;
+    tipShow(e,`<b>Periodo del ${fDate(b)}</b>${b>=53?'<span class="k" style="margin:0 0 4px">año de prueba</span>':""}${pts.map(p=>`<span style="display:flex;justify-content:space-between;gap:14px;margin-top:3px"><span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${p[2]};margin-right:6px"></i>${name(p[0])}</span><b class="num" style="display:inline;font-size:13px">${fInt(p[1])} u.</b></span>`).join("")}${r.obs<r.comp*0.8?'<span class="k">Hubo faltante de producto en este periodo.</span>':""}`,"artTip","artCard")});
+  ov.addEventListener("mouseleave",()=>{hov.innerHTML="";tipHide("artTip")})}
+function drawArtDet(){
+  const hh=document.getElementById("artHist");
+  const H=frame(hh,{w:460,h:230,ml:36,x0:0,x1:8,y0:0,y1:25,yTicks:[0,5,10,15,20,25],yFmt:v=>String(v),xTicks:D.hist.map((b,i)=>[i+.5,fInt(b[0]/1000)+"–"+fInt(b[1]/1000)]),label:"Histograma"});
+  D.hist.forEach((b,i)=>el("rect",{x:H.X(i+.1),y:H.Y(b[2]),width:H.X(.8)-H.X(0),height:H.Y(0)-H.Y(b[2]),fill:"#5a6f93",rx:3},H.s));
+  const M=frame(document.getElementById("artMoney"),{w:460,h:230,ml:36,x0:5,x1:65,y0:0,y1:50000,yTicks:[0,25000,50000],yFmt:v=>fInt(v/1000),xTicks:[[9,"2012"],[35,"2014"],[61,"2016"]],label:"Venta en dinero"});
+  path(M,D.art.map(r=>[r[0],r[3]]),{stroke:"#d6deeb","stroke-width":1.4})}
+(function(){const a=D.artImp,save=(a.exNaive-a.exModel)-(a.loModel-a.loNaive),wape=0.0516;
+  document.getElementById("artSub").innerHTML=`<span class="pill-seg" style="border-color:var(--sy)">Vitales recurrentes</span> · desde sep 2011 · política sugerida: revisión periódica`;
+  document.getElementById("artHeadline").innerHTML=`En el año de prueba el pronóstico acertó <em>${Math.round((1-wape)*100)} de cada 100 unidades</em>: se equivocó en unas 780 unidades por periodo, sobre una venta típica de 15 mil.`;
+  document.getElementById("artImpact").innerHTML=`Frente a la línea base, pedir con el pronóstico habría ahorrado <b style="color:var(--good)">${fK(save)}</b> en el año, el ${fP(save/a.demand)} de su demanda (${fK(a.demand)}).`;
+  document.getElementById("aEx").textContent=fK(a.exNaive-a.exModel);document.getElementById("aLo").textContent=fK(a.loModel-a.loNaive);document.getElementById("aNet").textContent=fK(save);
+  /* tabla del cálculo del ahorro */
+  const sum=arr=>arr.reduce((x,y)=>x+y,0),uF=sum(D.artF),uB=sum(D.artB),uC=sum(D.artF.map((_,i)=>artRow(53+i).comp));
+  const totN=a.exNaive+a.loNaive,totM=a.exModel+a.loModel;
+  const row=(l,n,m,d,cls,b)=>`<tr${b?' style="font-weight:600"':""}><td>${l}</td><td>${n}</td><td>${m}</td><td class="${cls||""}">${d}</td></tr>`;
+  document.getElementById("calcTbl").innerHTML=`<thead><tr><th>Concepto · año de prueba (13 periodos)</th><th>Línea base</th><th>Pronóstico</th><th>Diferencia (ahorro)</th></tr></thead><tbody>
+    ${row("Unidades pronosticadas en el año",fInt(uB)+" u.",fInt(uF)+" u.",`real sin faltantes: ${fInt(uC)} u.`)}
+    ${row("Error medio por periodo (WAPE)","6,7 %","5,2 %","1,5 puntos menos","pos")}
+    ${row("Colchón para atender el 95 % (z)","0,71","−0,01","")}
+    ${row("Mercancía sobrante",fInt(a.exNaive)+" US$",fInt(a.exModel)+" US$",fInt(a.exNaive-a.exModel)+" US$","pos")}
+    ${row("Ventas perdidas por falta de producto",fInt(a.loNaive)+" US$",fInt(a.loModel)+" US$","−"+fInt(a.loModel-a.loNaive)+" US$","neg")}
+    ${row("Costo total de equivocarse",fInt(totN)+" US$",fInt(totM)+" US$",fInt(totN-totM)+" US$","pos",true)}
+    ${row("Como % de la demanda del año ("+fInt(a.demand)+" US$)",fP(totN/a.demand,1),fP(totM/a.demand,1),fP((totN-totM)/a.demand,1),"pos")}</tbody>`;
+  const rows=D.artF.map((f,i)=>{const r=artRow(53+i);return {b:53+i,obs:r.obs,comp:r.comp,f,base:D.artB[i]}});
+  document.getElementById("artTbl").innerHTML=`<caption>Unidades por periodo de 4 semanas</caption><thead><tr><th>Inicio del periodo</th><th>Se vendió</th><th>Sin faltantes</th><th>Pronóstico</th><th>Línea base</th><th>Pronóstico − real</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${fDate(r.b)}</td><td>${fInt(r.obs)}</td><td>${fInt(r.comp)}</td><td>${fInt(r.f)}</td><td>${fInt(r.base)}</td><td class="${r.f-r.comp>=0?"":"neg"}">${fInt(r.f-r.comp)}</td></tr>`).join("")}</tbody>`;
+  document.getElementById("exportCsv").addEventListener("click",async()=>{const csv="inicio_periodo,vendido,sin_faltantes,pronostico,linea_base\n"+rows.map(r=>[blockDate(r.b).toISOString().slice(0,10),r.obs,r.comp,r.f,r.base].join(",")).join("\n");
+    try{await navigator.clipboard.writeText(csv);toast("En el dash real esto descarga un CSV. En el mockup, los datos se copiaron al portapapeles.")}catch(e){toast("En el dash real esto descarga un CSV de 13 filas.")}});
+  document.getElementById("bandsChk").addEventListener("change",()=>toast(document.getElementById("bandsChk").checked?"Las bandas ±3σ aparecerán en la gráfica del artículo.":"Bandas ocultas."));
+  const go=()=>{const v=document.getElementById("artSearch").value.trim().toUpperCase();if(v&&v!=="FOODS_3_090"){toast(`En el dash real se abriría la ficha de ${v}. En el mockup solo FOODS_3_090 tiene datos.`);document.getElementById("artSearch").value="FOODS_3_090"}};
+  document.getElementById("artOptions").innerHTML=D.items.map(r=>`<option value="${r[0]}">${cellName(r[1])}</option>`).join("");
+  document.getElementById("artSearch").addEventListener("change",go);
+  document.getElementById("artGo").addEventListener("click",go);document.getElementById("artSearch").addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+  const of=document.getElementById("onlyF");of.addEventListener("click",()=>{const on=of.getAttribute("aria-pressed")!=="true";of.setAttribute("aria-pressed",on);toast(on?"Búsqueda limitada a los 517 artículos con pronóstico.":"Búsqueda en los 3.049 artículos del catálogo.")})})();
+
+/* ===================== IMPACTO ===================== */
+const BASEC="#ff9f6e";
+function modelAtExcess(E){const c=TC.m;for(let i=0;i<c.length-1;i++){if(E>=c[i].ex&&E<=c[i+1].ex){const t=(E-c[i].ex)/(c[i+1].ex-c[i].ex);return {lo:c[i].lo+t*(c[i+1].lo-c[i].lo),z:c[i].z+t*(c[i+1].z-c[i].z)}}}return null}
+function miniBars(host,rows,max,unit){const ticks=unit==="ex"?[0,3e6,6e6,9e6,12e6]:[0,1e6,2e6,3e6];
+  host.innerHTML=rows.map(([l,v,col])=>`<div class="mb-row"><span>${l}</span><span class="mb-track"><span class="mb-fill" style="width:${Math.max(v/max*100,.6)}%;background:${col}"></span></span><span class="num">${fM(v)}</span></div>`).join("")+
+   `<div class="mb-axis"><span></span><span class="mb-ticks">${ticks.map(t=>`<i style="left:${t/max*100}%">${t?fDec(t/1e6,0)+" M":"0"}</i>`).join("")}</span><span></span></div>`}
+function drawImpact(){const s=+document.getElementById("svc").value/100,r=impactAt(s),pc=fDec(s*100,s*100%1?1:0)+" %";
+  document.getElementById("svcLbl").textContent=pc;
+  /* palanca 1: mismo servicio, menos sobrante */
+  document.getElementById("lvA_sub").textContent=`mismo ${pc} de demanda atendida`;
+  document.getElementById("lvA_v").textContent=fM(r.save);
+  document.getElementById("lvA_t").innerHTML=`menos mercancía sobrante (−${fP(r.pct)}). Es dinero que no queda inmovilizado en el anaquel y se puede usar en otra cosa. Las dos estrategias pierden lo mismo en ventas: <b style="color:var(--lost)">${fM(r.m.lo)}</b>.`;
+  miniBars(document.getElementById("lvA_bars"),[["Línea base",r.n.ex,BASEC],["Pronóstico",r.m.ex,"var(--model)"]],12e6,"ex");
+  /* palanca 2: mismo sobrante, más ventas */
+  const mm=modelAtExcess(r.n.ex),rec=mm?r.n.lo-mm.lo:null,sv2=mm?1-mm.lo/DT:null;
+  document.getElementById("lvB_sub").textContent=`mismo sobrante que la línea base (${fM(r.n.ex)})`;
+  document.getElementById("lvB_v").textContent=rec!=null?fM(rec):"—";
+  document.getElementById("lvB_t").innerHTML=rec!=null?`en ventas que ya no se pierden por falta de producto. Con ese mismo inventario, el pronóstico atiende el <b>${fDec(sv2*100,1)} %</b> de la demanda en lugar del ${pc}.`:"Fuera del rango calculado.";
+  if(mm)miniBars(document.getElementById("lvB_bars"),[["Línea base",r.n.lo,BASEC],["Pronóstico",mm.lo,"var(--model)"]],3e6,"lo");
+  /* segmentos */
+  document.getElementById("segPctLbl").textContent=`capital liberado al ${pc} de demanda atendida`;
+  const mx=Math.max(...r.segs.map(x=>x.save));
+  document.getElementById("segBars").innerHTML=r.segs.map(x=>`<div class="hbar" style="grid-template-columns:170px 1fr 92px"><span>${cellName(x.g)}</span><span class="track" style="height:16px"><span class="fill" style="width:${x.save/mx*100}%;background:${SEGCOL[x.g[1]]}"></span></span><span class="val num">${fM(x.save)}</span></div>`).join("");
+  document.getElementById("segSum").textContent=`Total: ${r.segs.map(x=>fDec(x.save/1e6,2)).join(" + ")} = ${fM(r.save)}. Los ocasionales liberan más porque son los más difíciles de prever con la línea base.`;
+  document.getElementById("zTxt").textContent=`pronóstico ${fDec(r.m.z,2)} · línea base ${fDec(r.n.z,2)}`;
+  drawCurve()}
+function drawCurve(){const host=document.getElementById("curveChart");if(!host||!document.getElementById("impDet").classList.contains("open"))return;
+  const s=+document.getElementById("svc").value/100,r=impactAt(s);
+  const F=frame(host,{w:1200,h:420,ml:70,x0:0,x1:12e6,y0:0,y1:4e6,yTicks:[0,1e6,2e6,3e6,4e6],yFmt:v=>v?fDec(v/1e6,0)+" M":"0",xTicks:[[0,"0"],[3e6,"3 M"],[6e6,"6 M"],[9e6,"9 M"],[12e6,"12 M"]],label:"Curva sobrante vs ventas perdidas",yTitle:"ventas perdidas (US$) ↑ · mercancía sobrante (US$) →"});
+  const clip=c=>c.filter(p=>p.ex<=12e6&&p.lo<=4e6).map(p=>[p.ex,p.lo]);
+  path(F,clip(TC.n),{stroke:BASEC,"stroke-width":2});path(F,clip(TC.m),{stroke:"var(--model)","stroke-width":2.4});
+  el("line",{x1:F.X(r.m.ex),x2:F.X(r.n.ex),y1:F.Y(r.m.lo),y2:F.Y(r.m.lo),stroke:"var(--good)","stroke-width":2,"stroke-dasharray":"4 3"},F.s);
+  el("circle",{cx:F.X(r.m.ex),cy:F.Y(r.m.lo),r:5,fill:"var(--model)"},F.s);el("circle",{cx:F.X(r.n.ex),cy:F.Y(r.n.lo),r:5,fill:BASEC},F.s);
+  txt(F.s,F.X(r.m.ex)+12,F.Y(r.m.lo)-10,"sobrante evitado "+fM(r.save),"lbl","start")}
+document.getElementById("svc").addEventListener("input",drawImpact);
+document.getElementById("impDetBtn").addEventListener("click",function(){const open=this.getAttribute("aria-expanded")==="true";this.childNodes[1].nodeValue=open?"Ocultar detalle del cálculo ":"Ver detalle del cálculo "});
+(function(){const t=document.getElementById("topTbl");
+  t.innerHTML=`<thead><tr><th>Artículo</th><th class="l">Segmento</th><th>Menos sobrante</th><th>Efecto en ventas perdidas</th><th>Ahorro neto</th></tr></thead><tbody>${D.top.map(([id,c,ex,lo])=>{const net=ex+lo;
+    return `<tr><td><button class="btn sm" data-art="${id}">${id} <span class="arrow">→</span></button></td><td class="l">${cellName(c)}</td><td class="${ex>=0?"":"neg"}">${fKn(ex)}</td><td class="${lo>=0?"pos":"neg"}">${lo>=0?fKn(lo)+" menos":fKn(-lo)+" más"}</td><td><b>${fKn(net)}</b></td></tr>`}).join("")}</tbody>`;
+  t.addEventListener("click",e=>{const b=e.target.closest("[data-art]");if(!b)return;if(b.dataset.art==="FOODS_3_090")show("articulo");else toast("En el mockup solo FOODS_3_090 tiene ficha con datos.")})})();
+
+/* ===================== GLOSARIO ===================== */
+const GLO=[
+ ["Lo básico",[
+  ["Periodo de 4 semanas","La unidad de tiempo del tablero: 28 días seguidos. Toda venta, pronóstico y error se lee por periodo.","bloque"],
+  ["Año de prueba","Los últimos 13 periodos de datos (mayo 2015 a mayo 2016). El pronóstico no los vio, así que ahí se mide qué tan bien funciona.","test"],
+  ["Pronóstico","Lo que el modelo espera vender en cada periodo. Un solo modelo aprende de la historia de todos los artículos.","CatBoost global"],
+  ["Línea base","La referencia: pedir lo mismo que se vendió en el mismo periodo del año anterior. Es lo que pasaría sin pronóstico.","seasonal naive"],
+  ["Venta sin faltantes","Lo que se habría vendido si siempre hubiera habido producto. Contra esta venta se mide el pronóstico.","venta completada"],
+  ["Faltante","Una racha de días sin venta porque no había producto, no porque nadie lo quisiera.","quiebre de stock"],
+  ["A precio de venta","Todo valor en dinero es unidades × precio de venta. No descuenta costos, así que no es ganancia.","valor a precio de venta"]]],
+ ["Segmentos",[
+  ["Vitales","Los pocos artículos que más pesan: juntos suman el primer 60 % de la venta. Si faltan en el anaquel, se nota en la caja. Son los que se pronostican.","clase A"],
+  ["Útiles","Artículos de aporte medio: llevan la venta acumulada del 60 % al 84 %.","clase B"],
+  ["Complementarios","Los muchos artículos que completan el surtido: cada uno vende poco y juntos suman el 16 % restante.","clase C"],
+  ["Continuos","Su venta es pareja de un periodo a otro. Son los más fáciles de prever.","clase X · CV bajo"],
+  ["Recurrentes","Su venta vuelve, pero con altibajos.","clase Y · CV intermedio"],
+  ["Ocasionales","Su venta da saltos fuertes de un periodo a otro. Son los más difíciles de prever.","clase Z · CV alto"],
+  ["Artículo típico del catálogo","El punto de comparación del radar y las barras (1×). Un grupo con 3× vende el triple que el artículo típico.","mediana global"],
+  ["Variabilidad de la venta","Qué tanto sube y baja la venta respecto a su promedio. Más alta = venta más irregular.","coeficiente de variación (CV)"],
+  ["Días sin venta","Porcentaje de los días con producto disponible en que no se vendió nada.","% días en cero"],
+  ["Unidades por día","Lo que vende el artículo en un día típico con producto disponible.","velocidad"]]],
+ ["Qué tan bien pronostica",[
+  ["Error del pronóstico","De cada 100 unidades vendidas, en cuántas se equivoca el pronóstico. Si es 5 %, acierta 95 de cada 100.","WAPE"],
+  ["Error medio por periodo","Cuántas unidades se equivoca, en promedio, en cada periodo de 4 semanas.","MAE"],
+  ["Error comparable entre artículos","Un error escalado que permite comparar artículos grandes y pequeños. Menor es mejor.","RMSSE · WRMSSE (criterio M5)"],
+  ["Marcado para revisión","El proyecto señaló el artículo porque su error en el año de prueba fue fuera de lo normal.","review"]]],
+ ["Impacto en dinero",[
+  ["% de la demanda atendida","De cada 100 dólares que los clientes quisieron comprar, cuántos se vendieron. Atender más exige pedir con más respaldo.","tasa de cumplimiento (fill rate)"],
+  ["Mercancía sobrante","Lo que se pidió de más y quedó en el anaquel: dinero inmovilizado.","exceso en anaquel"],
+  ["Ventas perdidas","Lo que los clientes quisieron comprar y no encontraron porque se pidió de menos.","venta perdida"],
+  ["Colchón","Unidades extra que se piden por encima del pronóstico para cubrir el error. Más colchón = menos ventas perdidas, pero más sobrante.","z × error típico"],
+  ["Liberar capital","Atender el mismo % de la demanda con menos mercancía sobrante. Es dinero que queda libre para otra cosa.","exceso evitado al mismo servicio"],
+  ["Recuperar ventas","Quedarse con el mismo sobrante de la línea base, pero atender más demanda.","venta recuperada con el mismo exceso"],
+  ["Ahorro neto de un artículo","Lo que cuesta equivocarse con la línea base (sobrante + ventas perdidas) menos lo que cuesta con el pronóstico.","ahorro con z fijo"],
+  ["Curva sobrante vs. ventas perdidas","Muestra, para cada tamaño de colchón, cuánto sobra y cuánto se deja de vender. La curva del pronóstico queda por debajo: con el mismo sobrante pierde menos ventas.","curva de eficiencia"]]]
+];
+function drawGlo(){const q=(document.getElementById("gloSearch").value||"").trim().toLowerCase();let n=0;
+  const body=GLO.map(([g,ts])=>{const f=ts.filter(t=>!q||t.join(" ").toLowerCase().includes(q));n+=f.length;
+    return f.length?`<tr class="glo-grp"><th colspan="3">${g}</th></tr>${f.map(([t,d,tec])=>`<tr><td class="glo-t">${t}</td><td class="glo-d">${d}</td><td class="glo-tec">${tec}</td></tr>`).join("")}`:""}).join("");
+  document.getElementById("glo").innerHTML=n?`<div class="tbl-wrap"><table class="glo-tbl"><colgroup><col style="width:22%"><col><col style="width:22%"></colgroup><thead><tr><th>Término</th><th>Qué significa</th><th>Nombre técnico</th></tr></thead><tbody>${body}</tbody></table></div>`:"";
+  document.getElementById("gloEmpty").style.display=n?"none":"block"}
+document.getElementById("gloSearch").addEventListener("input",drawGlo);
+
+/* ===================== arranque ===================== */
+drawGlo();buildBubbles();drawPanel();drawFunnel();drawDetail();drawLegend();drawImpact();
+show(location.hash.slice(1)||"inicio");
+</script>
+</body>
+</html>

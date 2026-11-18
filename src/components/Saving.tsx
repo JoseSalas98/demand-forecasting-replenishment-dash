@@ -1,21 +1,18 @@
-import { Money } from './Money';
+import { fmtMoney } from '../format';
 
 /**
- * Ahorro frente a no hacer nada (columnas impact* de las salidas: costo de la línea base − costo
- * del modelo). Negativo = en ese caso el modelo cuesta más que repetir el año anterior
- * (constitución III.3). Nunca se rotula "impacto negativo".
+ * Ahorro frente a la línea base (columnas impact* de las salidas: costo de la línea base − costo
+ * del pronóstico). Negativo = en ese caso el pronóstico cuesta más (constitución III.3).
  */
-export function Saving({ value, compact = false, sentence = true }: { value: number | null | undefined; compact?: boolean; sentence?: boolean }) {
-  if (value === null || value === undefined || !Number.isFinite(value)) {
-    return <Money value={null} compact={compact} />;
-  }
+export function Saving({ value, sentence = true }: { value: number | null | undefined; compact?: boolean; sentence?: boolean }) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return <span>{fmtMoney(null)}</span>;
   const worse = value < 0;
+  if (!sentence) return <span className={worse ? 'negative' : 'positive'}>{worse ? '− ' : ''}{fmtMoney(Math.abs(value))}</span>;
   return (
     <span className={worse ? 'negative' : 'positive'}>
-      {sentence && !compact && (worse ? 'el modelo cuesta ' : 'el modelo ahorra ')}
-      {compact && worse && '− '}
-      <Money value={Math.abs(value)} compact={compact} />
-      {sentence && !compact && (worse ? ' más que repetir el año anterior' : ' frente a repetir el año anterior')}
+      {worse ? 'el pronóstico cuesta ' : 'el pronóstico ahorra '}
+      {fmtMoney(Math.abs(value))}
+      {worse ? ' más que la línea base' : ' frente a la línea base'}
     </span>
   );
 }

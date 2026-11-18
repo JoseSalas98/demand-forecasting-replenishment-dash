@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import type { Scenario } from './types';
 
-export type RouteName = 'home' | 'segmentation' | 'segment' | 'item' | 'playground' | 'impact' | 'guide' | 'sources' | 'notFound';
+export type RouteName = 'home' | 'segmentation' | 'segment' | 'item' | 'itemDetail' | 'playground' | 'impact' | 'guide' | 'sources' | 'notFound';
 
 export interface Route {
   route: RouteName;
@@ -37,6 +37,9 @@ export function parseHash(hash: string): Route {
   } else if (parts[0] === 'articulo' && parts.length <= 2) {
     route = 'item';
     if (parts[1]) params.itemId = parts[1];
+  } else if (parts[0] === 'articulo' && parts.length === 3 && parts[2] === 'detalle') {
+    route = 'itemDetail';
+    params.itemId = parts[1];
   } else if (parts[0] === 'articulo' && parts.length === 3 && parts[2] === 'playground') {
     route = 'playground';
     params.itemId = parts[1];

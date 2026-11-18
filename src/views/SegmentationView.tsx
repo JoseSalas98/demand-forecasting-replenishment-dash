@@ -1,186 +1,181 @@
+// Segmentos (spec 002, US2): burbujas por familia, panel del grupo con radar y barras, y embudo.
 import { useState } from 'react';
-import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
-import { FunnelBar } from '../components/charts/FunnelBar';
-import { SegmentMatrix } from '../components/charts/SegmentMatrix';
-import { AXIS_LABEL, SegmentRadar } from '../components/charts/SegmentRadar';
+import { Bubbles, type SizeMode } from '../components/charts/Bubbles';
+import { Funnel } from '../components/charts/Funnel';
+import { AXIS_LABEL, GroupRadar, groupColor } from '../components/charts/GroupRadar';
 import { HelpTip } from '../components/HelpTip';
 import { ModuleHeader } from '../components/ModuleHeader';
-import { Money } from '../components/Money';
+import { Pill } from '../components/Pill';
 import { LoadError, Loading, Pending } from '../components/StateViews';
 import { useData } from '../data';
-import { fmtNumber, fmtPct } from '../format';
+import { fmtM, fmtNumber, fmtPct } from '../format';
+import { GLOSSARY_BY_ID } from '../glossary';
+import { CELL_POLICY, cellName } from '../naming';
 import { hashFor } from '../router';
-import { AXIS, CELL_COLOR, GRID, TOOLTIP } from '../theme';
-import type { Cell, Funnel, Meta, Scenario, Segmentation, SegmentKey, Segments } from '../types';
+import { LEVEL_COLOR } from '../theme';
+import type { Funnel as FunnelData, Meta, Segmentation } from '../types';
 
-const MAIN: Cell[] = ['AX', 'AY', 'AZ'];
+const VITALS = ['AX', 'AY', 'AZ'];
 
-/** Valor crudo de un eje del radar con su unidad. */
-function RawValue({ axis, value }: { axis: string; value: number }) {
+/** Valor real de una variable del radar con su unidad. */
+export function formatRaw(axis: string, v: number): string {
   switch (axis) {
-    case 'spend': return <Money value={value} compact />;
-    case 'cv': return <>{fmtPct(value)}</>;
-    case 'zero_share': return <>{fmtPct(value * 100)}</>;
-    case 'usage_units': return <>{fmtNumber(value)} u.</>;
-    default: return <>{fmtNumber(value, 2)}</>;
+    case 'spend': return `${fmtNumber(v)} US$`;
+    case 'usage_units': return `${fmtNumber(v)} u.`;
+    case 'cv': return `${fmtNumber(v, 1)} %`;
+    case 'zero_share': return `${fmtNumber(v * 100, 1)} % de los días`;
+    case 'velocity': return `${fmtNumber(v, 1)} u. por día`;
+    default: return fmtNumber(v, 2);
   }
 }
 
-function FunnelCard({ scenario }: { scenario: Scenario }) {
-  const funnel = useData<Funnel>('funnel.json');
-  if (funnel.status === 'error') return <div className="card"><LoadError error={funnel.error} /></div>;
-  if (funnel.status !== 'ready') return <div className="card"><Loading /></div>;
-  const f = funnel.data;
+function times(v: number): string {
+  if (v >= 1.15) return `${fmtNumber(v, 1)} veces más que`;
+  if (v <= 0.87) return `${fmtNumber(1 / v, 1)} veces menos que`;
+  return 'lo mismo que';
+}
+
+function GroupPanel({ data, cell, forecasted }: { data: Segmentation; cell: string; forecasted: Record<string, number> }) {
+  const [visible, setVisible] = useState<Record<string, boolean>>({ AX: true, AY: true, AZ: true });
+  const profile = data.radar.cells[cell] ?? {};
+  const m = data.matrix.find((x) => x.cell === cell);
+  const norm = (a: string) => profile[a]?.median_norm ?? null;
+  const cv = norm('cv');
+  const cvText = cv === null ? 'de variabilidad no disponible' : cv < 0.85 ? 'más pareja que la del artículo típico' : cv > 1.2 ? 'con saltos más fuertes que la del artículo típico' : 'con altibajos parecidos a los del artículo típico';
+  const col = groupColor(cell);
+  const isVital = VITALS.includes(cell);
+  const target = isVital ? cell : 'AX';
+  const MAXB = 4.8;
   return (
-    <div className="card section">
-      <h2>Embudo: del catálogo a lo que se pronostica</h2>
-      <FunnelBar stages={f.stages} />
-      <div className="cards" style={{ marginTop: 16 }}>
+    <div className="card panel">
+      <div className="card-head">
         <div>
-          <div className="label">Gasto de train (años 1–4) de toda la cadena que cubren los 517</div>
-          <div className="big-number">{fmtPct(f.money_at_stake.train_spend_share_517 * 100)}</div>
+          <h2>{cellName(cell)}</h2>
+          <div className="small muted">{fmtNumber(m?.n_items)} artículos · {fmtM(m?.spend)} de venta</div>
         </div>
-        <div>
-          <div className="label">Demanda del año de test de los 517</div>
-          <div className="big-number"><Money value={f.money_at_stake.test_demand_517} /></div>
-        </div>
+        <a className="btn small icon-btn" href={hashFor(`/segmentacion/${target}`, 'A')}><span className="ico" aria-hidden="true">i</span>Detalle</a>
       </div>
-      <p className="small" style={{ marginTop: 8 }}>
-        <a href={hashFor('/impacto', scenario)}>Ver el impacto en dinero →</a>
+      <p>
+        Un artículo típico de este grupo vende <b>{norm('spend') === null ? 'no disponible' : times(norm('spend')!)}</b> el artículo típico del
+        catálogo. Su venta es <b>{cvText}</b> y pasa sin vender el <b>{fmtPct((profile.zero_share?.median_raw ?? NaN) * 100)}</b> de los días.
       </p>
+      {isVital ? (
+        <p className="small muted">Con pronóstico: <b className="strong">{fmtNumber(forecasted[cell])} de {fmtNumber(m?.n_items)}</b> · política sugerida: <b className="strong">{CELL_POLICY[cell]}</b></p>
+      ) : (
+        <p className="small muted">Este grupo no se pronostica. El radar lo compara con los tres grupos Vitales, que sí se pronostican.</p>
+      )}
+      <div className="legend" role="group" aria-label="Grupos del radar">
+        <span className="lg static"><i style={{ background: col }} />{cellName(cell)}</span>
+        {VITALS.filter((v) => v !== cell).map((v) => (
+          <button key={v} type="button" className="lg" aria-pressed={visible[v]} onClick={() => setVisible({ ...visible, [v]: !visible[v] })}>
+            <i style={{ background: LEVEL_COLOR[v[1]] }} />{cellName(v)}
+          </button>
+        ))}
+        <span className="lg static"><i className="dashed" />Artículo típico (1×)</span>
+      </div>
+      <GroupRadar data={data} selected={cell} visible={visible} formatRaw={formatRaw} />
+      <div className="eyebrow-label">Frente al artículo típico del catálogo</div>
+      <div className="hbars">
+        {data.radar.axes.map((a) => {
+          const v = norm(a);
+          return (
+            <div key={a} className="hbar">
+              <span>
+                {GLOSSARY_BY_ID[a]?.term ?? AXIS_LABEL[a] ?? a}{' '}
+                <HelpTip
+                  id={a}
+                  extra={profile[a] ? <>{cellName(cell)} (mediana): <b>{formatRaw(a, profile[a].median_raw)}</b><br />Artículo típico del catálogo: {formatRaw(a, data.radar.global_median[a])}</> : undefined}
+                />
+              </span>
+              <span className="track">
+                <span className="fill" style={{ width: `${(Math.min(v ?? 0, MAXB) / MAXB) * 100}%`, background: col }} />
+                <span className="ref" style={{ left: `${(1 / MAXB) * 100}%` }} />
+              </span>
+              <span className="val">{v === null ? 'no disponible' : `${fmtNumber(v, 1)}×`}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="small muted">La raya marca el artículo típico del catálogo (1×).</p>
     </div>
   );
 }
 
-function ComparisonCard() {
-  const segs = useData<Segments>('segments.json');
-  if (segs.status === 'error') return <div className="card section"><LoadError error={segs.error} /></div>;
-  if (segs.status !== 'ready') return <div className="card section"><Loading /></div>;
-  const seg = segs.data.segments;
-  const keys: SegmentKey[] = [...MAIN, 'total'];
-  // Distribución del CV de train de los 517: un punto por artículo, sin estadísticos nuevos
-  const points = MAIN.flatMap((c, k) => seg[c].cv_train.map((cv, i) => ({ x: k + 1 + ((i % 9) - 4) * 0.03, cv, cell: c })));
-  const wape = (v: number | null) => fmtPct(v === null ? null : v * 100);
+function FunnelCard({ data }: { data: FunnelData }) {
+  const stage = (k: string) => data.stages.find((s) => s.key === k);
+  const outside = (stage('segment_a')?.count ?? NaN) - (stage('forecasted')?.count ?? NaN);
   return (
     <div className="card section">
-      <h2>Comparación AX · AY · AZ (los 517 pronosticados)</h2>
-      <div className="grid-2">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th></th>
-                {keys.map((k) => (
-                  <th key={k}><a href={hashFor(`/segmentacion/${k}`, 'A')}>{k === 'total' ? 'Total' : k}</a></th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr><td>Artículos</td>{keys.map((k) => <td key={k}>{fmtNumber(seg[k].n_items)}</td>)}</tr>
-              <tr><td>Gasto de train</td>{keys.map((k) => <td key={k}><Money value={seg[k].spend_train} compact /></td>)}</tr>
-              <tr><td>% del gasto de la cadena</td>{keys.map((k) => <td key={k}>{fmtPct(seg[k].spend_share * 100)}</td>)}</tr>
-              <tr><td>WRMSSE · A · a un paso</td>{keys.map((k) => <td key={k}>{fmtNumber(seg[k].error.one_step.wrmsse, 3)}</td>)}</tr>
-              <tr><td>WRMSSE · B · encadenado</td>{keys.map((k) => <td key={k}>{fmtNumber(seg[k].error.chained.wrmsse, 3)}</td>)}</tr>
-              <tr><td>WRMSSE · línea base</td>{keys.map((k) => <td key={k}>{fmtNumber(seg[k].error.seasonal_naive.wrmsse, 3)}</td>)}</tr>
-              <tr><td>WAPE · A · a un paso</td>{keys.map((k) => <td key={k}>{wape(seg[k].error.one_step.wape)}</td>)}</tr>
-              <tr><td>WAPE · B · encadenado</td>{keys.map((k) => <td key={k}>{wape(seg[k].error.chained.wape)}</td>)}</tr>
-              <tr><td>WAPE · línea base</td>{keys.map((k) => <td key={k}>{wape(seg[k].error.seasonal_naive.wape)}</td>)}</tr>
-            </tbody>
-          </table>
-        </div>
-        <div>
-          <div className="label">CV de train de cada artículo (segmentación)</div>
-          <ResponsiveContainer width="100%" height={260}>
-            <ScatterChart margin={{ left: 0, right: 16, top: 10 }}>
-              <CartesianGrid {...GRID} />
-              <XAxis {...AXIS} type="number" dataKey="x" domain={[0.5, 3.5]} ticks={[1, 2, 3]} tickFormatter={(v) => MAIN[v - 1] ?? ''} />
-              <YAxis {...AXIS} type="number" dataKey="cv" name="CV de train" width={50} />
-              <Tooltip {...TOOLTIP} formatter={(v: number, n: string) => (n === 'CV de train' ? fmtNumber(v, 1) : '')} />
-              {MAIN.map((c) => (
-                <Scatter key={c} name={c} data={points.filter((p) => p.cell === c)} fill={CELL_COLOR[c]} fillOpacity={0.55} isAnimationActive={false} />
-              ))}
-            </ScatterChart>
-          </ResponsiveContainer>
-          <p className="small muted">Un punto por artículo; más arriba, venta más variable de bloque a bloque.</p>
+      <div className="card-head">
+        <h2>Del catálogo a lo que se pronostica</h2>
+        <a className="btn small icon-btn" href={hashFor('/segmentacion/AX', 'A')}><span className="ico" aria-hidden="true">i</span>Detalle de los pronosticados</a>
+      </div>
+      <div className="fun-grid">
+        <Funnel stages={data.stages} />
+        <div className="fun-tiles">
+          <div className="ftile"><div className="v accent">{fmtPct(data.money_at_stake.train_spend_share_517 * 100, 0)}</div><div className="l">de la venta de la cadena queda cubierta por los {fmtNumber(stage('forecasted')?.count)} artículos con pronóstico</div></div>
+          <div className="ftile"><div className="v">{fmtM(data.money_at_stake.test_demand_517)}</div><div className="l">de demanda de esos artículos en el año de prueba: es lo que está en juego</div></div>
+          <div className="ftile"><div className="v amber">{fmtNumber(outside)}</div><div className="l">Vitales sin pronóstico: no pasan los criterios de calidad del dato o no tienen historia suficiente tras el procesamiento</div></div>
         </div>
       </div>
     </div>
   );
 }
 
-export function SegmentationView({ scenario }: { scenario: Scenario }) {
+export function SegmentationView() {
   const meta = useData<Meta>('meta.json');
   const seg = useData<Segmentation>('segmentation.json');
+  const funnel = useData<FunnelData>('funnel.json');
   const [selected, setSelected] = useState('AX');
-  const [hover, setHover] = useState<string | null>(null);
+  const [mode, setMode] = useState<SizeMode>('spend');
 
   const pending = meta.status === 'ready' && (meta.data.pending ?? []).some((p) => ['segmentation_items', 'radar_profiles'].includes(p.name));
-  const total = seg.status === 'ready' ? seg.data.total_items : null;
+  const forecasted = funnel.status === 'ready' ? (funnel.data.stages.find((s) => s.key === 'forecasted')?.by_cell ?? {}) as Record<string, number> : {};
 
   let top;
-  if (pending || seg.status === 'error') top = <Pending what="la matriz ABC × XYZ ni el radar (segmentation_items, radar_profiles)" />;
+  if (pending || seg.status === 'error') top = <Pending what="los segmentos ni el radar (segmentation_items, radar_profiles)" />;
   else if (seg.status !== 'ready') top = <Loading />;
   else {
-    const data = seg.data;
-    const profile = data.radar.cells[selected] ?? {};
+    const d = seg.data;
+    const fam = (f: string) => d.matrix.filter((x) => x.cell[0] === f).reduce((a, x) => ({ n: a.n + x.n_items, s: a.s + x.spend }), { n: 0, s: 0 });
+    const allSpend = d.matrix.reduce((a, x) => a + x.spend, 0);
+    const A = fam('A'), C = fam('C');
     top = (
-      <div className="grid-3">
-        <div className="card">
-          <h2>Matriz ABC × XYZ</h2>
-          <SegmentMatrix data={data} selected={selected} onSelect={setSelected} />
-        </div>
-        <div className="card">
-          <h2>Perfil de segmentos (mediana normalizada) <HelpTip id="mediana-normalizada" scenario={scenario} /></h2>
-          <SegmentRadar data={data} selected={selected} />
+      <div className="seg-layout">
+        <div className="card bubbles-card">
+          <div className="card-head">
+            <h2>¿Cómo se reparte el catálogo?</h2>
+            <div className="module-controls">
+              <span className="small muted">Tamaño por</span>
+              <div className="seg-toggle" role="group" aria-label="Tamaño de las burbujas">
+                <Pill small active={mode === 'spend'} onClick={() => setMode('spend')}>Venta</Pill>
+                <Pill small active={mode === 'n'} onClick={() => setMode('n')}>Artículos</Pill>
+              </div>
+            </div>
+          </div>
+          <Bubbles matrix={d.matrix} selected={selected} onSelect={setSelected} mode={mode} />
+          <div className="seg-legend">
+            <span><i style={{ background: LEVEL_COLOR.X }} />Continuos · venta pareja</span>
+            <span><i style={{ background: LEVEL_COLOR.Y }} />Recurrentes · vuelve con altibajos</span>
+            <span><i style={{ background: LEVEL_COLOR.Z }} />Ocasionales · venta con saltos</span>
+          </div>
           <p className="small muted">
-            1,0 = mediana global del catálogo ({fmtNumber(data.total_items + data.excluded_no_xyz)} artículos; en CV, los{' '}
-            {fmtNumber(data.total_items)} con CV).
+            {mode === 'spend'
+              ? `Tamaño = venta de 2011 a 2015. Los Vitales son el ${fmtPct((A.n / d.total_items) * 100, 0)} de los artículos clasificados, pero hacen el ${fmtPct((A.s / allSpend) * 100, 0)} de esa venta.`
+              : `Tamaño = número de artículos. Los Complementarios son la mitad del catálogo clasificado (${fmtNumber(C.n)} de ${fmtNumber(d.total_items)}), aunque venden poco cada uno.`}
+            {' '}{fmtNumber(d.excluded_no_xyz)} artículos sin clase de regularidad no aparecen aquí.
           </p>
         </div>
-        <div className="card">
-          <h2>{selected} · al pasar el cursor</h2>
-          <div className="small muted" style={{ marginBottom: 6 }}>
-            <span className="dot" style={{ background: CELL_COLOR[selected] ?? 'var(--slate)' }} />
-            mediana normalizada; el valor crudo aparece con el cursor
-          </div>
-          {data.radar.axes.map((a) => (
-            <div
-              key={a}
-              className="profile-row"
-              tabIndex={0}
-              onMouseEnter={() => setHover(a)}
-              onMouseLeave={() => setHover(null)}
-              onFocus={() => setHover(a)}
-              onBlur={() => setHover(null)}
-            >
-              <div>
-                <div>{AXIS_LABEL[a] ?? a} <HelpTip id={a} scenario={scenario} /></div>
-                <div className="raw">
-                  {hover === a && profile[a] ? <>crudo: <RawValue axis={a} value={profile[a].median_raw} /></> : ' '}
-                </div>
-              </div>
-              <div className="norm">{fmtNumber(profile[a]?.median_norm, 2)}</div>
-            </div>
-          ))}
-          {MAIN.includes(selected as Cell) && (
-            <p className="small" style={{ marginTop: 12 }}>
-              <a href={hashFor(`/segmentacion/${selected}`, scenario)}>Ver artículos →</a>
-            </p>
-          )}
-        </div>
+        <GroupPanel data={d} cell={selected} forecasted={forecasted} />
       </div>
     );
   }
 
   return (
     <>
-      <ModuleHeader
-        title="Segmentación ABC × XYZ"
-        subtitle={`${total === null ? '' : `${fmtNumber(total)} artículos con clase XYZ · `}ABC por gasto de train · XYZ por variabilidad de unidades (train)`}
-      />
+      <ModuleHeader title="Segmentos del catálogo" subtitle="Tres familias según cuánto aportan a la venta; dentro de cada una, tres grupos según qué tan regular es su venta" />
       {top}
-      <ComparisonCard />
-      <FunnelCard scenario={scenario} />
+      {funnel.status === 'error' ? <LoadError error={funnel.error} /> : funnel.status !== 'ready' ? <Loading /> : <FunnelCard data={funnel.data} />}
     </>
   );
 }

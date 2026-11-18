@@ -9,7 +9,10 @@ export const COLOR = {
   text: '#E6EDF5',
   textMuted: '#8C9AB0',
   cyan: '#009FCA', // acento de la interfaz y modelo (CatBoost)
-  plum: '#965596', // línea base (seasonal naive)
+  coral: '#FF9F6E', // línea base (seasonal naive)
+  amber: '#F2B24C', // mercancía sobrante
+  red: '#EF7D7D', // ventas perdidas
+  good: '#4CC38A', // ahorro
   blue: '#2B95E1', // segmento AX
   green: '#148E66', // segmento AY
   violet: '#725FB3', // segmento AZ
@@ -19,6 +22,9 @@ export const COLOR = {
 } as const;
 
 export const CELL_COLOR: Record<string, string> = { AX: COLOR.blue, AY: COLOR.green, AZ: COLOR.violet };
+
+/** Color por regularidad (X continuos, Y recurrentes, Z ocasionales): el mismo de su celda Vital. */
+export const LEVEL_COLOR: Record<string, string> = { X: COLOR.blue, Y: COLOR.green, Z: COLOR.violet };
 
 /** Props comunes de ejes y rejilla de Recharts en tema oscuro. */
 export const AXIS = { stroke: COLOR.border, tick: { fill: COLOR.textMuted, fontSize: 12 } } as const;

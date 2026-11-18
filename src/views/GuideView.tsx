@@ -1,175 +1,102 @@
-import { useEffect, useMemo, useState } from 'react';
-import { GuideWalkthrough, TOURS } from '../components/GuideWalkthrough';
+// Cómo usar (spec 002, US4): para qué sirve el tablero, para qué sirve cada sección y glosario en tabla.
+import { useEffect, useState } from 'react';
 import { ModuleHeader } from '../components/ModuleHeader';
-import { Money } from '../components/Money';
-import { Pill } from '../components/Pill';
-import { useData } from '../data';
-import { fmtNumber } from '../format';
-import { GLOSSARY, GLOSSARY_GROUPS } from '../glossary';
+import { GLOSSARY, GLOSSARY_BY_ID, GLOSSARY_GROUPS } from '../glossary';
 import { hashFor } from '../router';
-import type { Meta, Scenario } from '../types';
 
-const MODULES: { name: string; path: string; answers: string; how: string[] }[] = [
+const MODULES: { title: string; icon: string; path: string; purpose: string; steps: string[] }[] = [
   {
-    name: 'Inicio',
-    path: '/',
-    answers: 'De qué se trata: cuántos artículos se analizan, cuántos tienen pronóstico y el exceso de inventario que evita el modelo.',
-    how: ['Lee las tres cifras.', 'Pulsa "Explorar →" para pasar a Segmentación.'],
+    title: 'Inicio', icon: '⌂', path: '/',
+    purpose: 'Es la puerta de entrada. Presenta el proyecto y lleva a Segmentos.',
+    steps: ['Pulsa "Explorar los segmentos" para empezar el recorrido.', 'El menú de la izquierda lleva a cualquier sección en cualquier momento.', '"Origen de los datos", al pie del menú, lista los archivos leídos y las verificaciones de las cifras.'],
   },
   {
-    name: 'Segmentación',
-    path: '/segmentacion',
-    answers: '¿Qué artículos me dan ingreso y cuáles me dan estabilidad? ¿Cómo se llega a los 517 pronosticados?',
-    how: [
-      'Haz clic en una celda de la matriz ABC × XYZ.',
-      'Lee su perfil en el radar y en la tarjeta de la celda (cursor sobre una fila = valor real; "?" = definición).',
-      'En AX, AY o AZ, "Ver artículos →" abre la lista ordenable del segmento.',
-      'Más abajo: la comparación de AX, AY y AZ, y el embudo con el dinero en juego.',
-    ],
+    title: 'Segmentos', icon: '▦', path: '/segmentacion',
+    purpose: 'Muestra cómo se reparte el catálogo. Responde qué artículos pesan más en la venta, cuáles venden de forma más pareja y cuáles se pronostican.',
+    steps: ['Pasa el cursor sobre una familia o una burbuja para leer qué significa.', 'Haz clic en una burbuja: a la derecha aparecen su descripción, el radar y las barras frente al artículo típico.', 'Cambia el tamaño entre venta y número de artículos para ver que pocos artículos hacen la mayor parte de la venta.', 'El botón ⓘ abre los errores del pronóstico por grupo y la lista de sus artículos.'],
   },
   {
-    name: 'Artículo',
-    path: '/articulo',
-    answers: '¿Cómo se ha comportado este artículo? Y, si es de los 517, ¿cuánto pido y qué tan bien se pronostica?',
-    how: [
-      'Busca el artículo; la píldora "Pronóstico" alterna entre los 517 y los 3.049.',
-      'Lee la venta en unidades (con media y bandas ±3σ) y en dinero, el CV descriptivo y la distribución.',
-      'Si tiene pronóstico: el tramo de test sobre la misma gráfica, el error (A / B), "¿Cuánto pido?", el impacto y el playground.',
-    ],
+    title: 'Artículo', icon: '∿', path: '/articulo',
+    purpose: 'Mira un artículo concreto: cómo se ha vendido, qué tan bien se pronosticó y cuánto ahorra frente a la línea base.',
+    steps: ['Busca el artículo por su código o elígelo de la lista.', 'Pasa el cursor por la gráfica para ver la fecha y las unidades de cada línea.', 'Usa "Año de prueba" para acercarte al año en que se comparan el pronóstico y la línea base.', 'El botón ⓘ abre el cálculo del ahorro, el error y la tabla por periodo, que se puede exportar.'],
   },
   {
-    name: 'Impacto',
-    path: '/impacto',
-    answers: '¿Cuánto me cuesta equivocarme? Venta perdida y exceso en anaquel del modelo frente a repetir el año anterior.',
-    how: [
-      'Elige el escenario A o B.',
-      'Elige Total o un segmento y mueve el nivel de servicio en la curva.',
-      'Revisa el aporte por segmento y los 10 artículos que más ahorran.',
-    ],
+    title: 'Impacto', icon: '$', path: '/impacto',
+    purpose: 'Traduce el pronóstico a dinero. Muestra cuánto capital se libera y cuántas ventas se recuperan frente a la línea base.',
+    steps: ['Mueve el control para elegir qué porcentaje de la demanda quieres atender.', 'Lee las dos maneras de aprovechar el pronóstico: liberar capital o recuperar ventas.', 'Mira en qué grupos está el ahorro y cuáles son los 10 artículos que más ahorran.', '"Ver detalle del cálculo" despliega la curva debajo, sin salir de la página.'],
   },
 ];
 
-function scrollToId(id: string) {
-  const el = document.getElementById(id);
-  if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-export function GuideView({ scenario, section, term }: { scenario: Scenario; section?: string; term?: string }) {
-  const meta = useData<Meta>('meta.json');
-  const [tourId, setTourId] = useState(TOURS[0].id);
-  const [q, setQ] = useState('');
-  const tour = TOURS.find((t) => t.id === tourId) ?? TOURS[0];
-
+export function GuideView({ term }: { term?: string }) {
+  const [q, setQ] = useState(() => (term && GLOSSARY_BY_ID[term] ? GLOSSARY_BY_ID[term].term : ''));
+  // Un enlace a un término (#/guia/glosario/:term) lleva directo al glosario
   useEffect(() => {
-    if (term) scrollToId(`term-${term}`);
-    else if (section === 'glosario') scrollToId('glosario');
-  }, [section, term]);
-
-  const entries = useMemo(() => {
-    const query = q.trim().toLowerCase();
-    return query ? GLOSSARY.filter((g) => `${g.term} ${g.definition} ${g.unit ?? ''}`.toLowerCase().includes(query)) : GLOSSARY;
-  }, [q]);
-
-  const m = meta.status === 'ready' ? meta.data : null;
+    if (term) document.getElementById('glosario')?.scrollIntoView?.();
+  }, [term]);
+  const query = q.trim().toLowerCase();
+  const match = (g: (typeof GLOSSARY)[number]) => !query || `${g.term} ${g.definition} ${g.technical}`.toLowerCase().includes(query);
+  const groups = GLOSSARY_GROUPS.map((grp) => ({ grp, rows: GLOSSARY.filter((g) => g.group === grp && match(g)) })).filter((x) => x.rows.length);
 
   return (
     <>
-      <ModuleHeader title="Cómo usar el dashboard" subtitle="Objetivo del proyecto, qué responde cada módulo, recorridos guiados y glosario">
-        <a className="pill" href="#/guia/glosario" onClick={(e) => { e.preventDefault(); scrollToId('glosario'); }}>Glosario</a>
-      </ModuleHeader>
-
-      <section className="card">
-        <h2>¿Qué quieres ver?</h2>
-        <p className="muted small">Elige una pregunta: el recorrido muestra, paso a paso, dónde hacer clic. "Ir ahí →" abre la pantalla real.</p>
-        <div className="module-controls" role="group" aria-label="Recorridos" style={{ margin: '10px 0 16px' }}>
-          {TOURS.map((t) => (
-            <Pill key={t.id} small active={t.id === tour.id} onClick={() => setTourId(t.id)}>{t.goal}</Pill>
-          ))}
+      <ModuleHeader title="Cómo usar el tablero" subtitle="Para qué sirve cada sección y qué significa cada término" />
+      <div className="card">
+        <h2>¿Para qué sirve este tablero?</h2>
+        <p className="prose">
+          Ayuda a decidir <b>cuánto reponer de cada artículo cada 4 semanas</b> y a ver <b>cuánto cuesta equivocarse</b>. Compara dos maneras de
+          pedir: el <b>pronóstico</b>, un modelo que aprende de la historia de ventas, y la <b>línea base</b>, que repite lo vendido en el mismo
+          periodo del año anterior. Las dos se ponen a prueba en el último año de datos, que el pronóstico no vio.
+        </p>
+        <div className="strip">
+          <span><b>10</b> tiendas de Walmart</span>
+          <span><b>2011–2016</b> de historia</span>
+          <span><b>3.049</b> artículos en el catálogo</span>
+          <span><b className="accent">517</b> con pronóstico</span>
         </div>
-        {/* key: cada recorrido arranca en su paso 1 con estado propio */}
-        <GuideWalkthrough key={tour.id} tour={tour} scenario={scenario} />
-      </section>
-
-      <div className="grid-2 section">
-        <section className="card">
-          <h2>Objetivo del proyecto</h2>
-          <p>
-            Que la gerencia regional y la de operaciones vean cuánto habría que reponer de cada artículo por bloque de 28 días y cuánto
-            cuesta en dinero equivocarse. Se compara un modelo de pronóstico (CatBoost global) con no hacer nada (repetir la venta del
-            año anterior) en el último año de datos, que el modelo no vio (test).
-          </p>
-          <p className="muted small">El dashboard no recalcula nada: muestra las salidas guardadas del proyecto de ciencia de datos.</p>
-        </section>
-        <section className="card">
-          <h2>Datos y alcance</h2>
-          <ul className="guide-list">
-            <li>M5 Walmart: 10 tiendas, ventas sumadas por artículo{m ? `, del ${m.period.start} al ${m.period.end}` : ''}.</li>
-            <li>Bloques de 28 días; el test son los últimos 13.</li>
-            <li>3.049 artículos con historia; 517 (AX, AY, AZ) con pronóstico, error e impacto.</li>
-            <li>Dos escenarios que nunca se mezclan: A · a un paso y B · encadenado.</li>
-            <li>
-              Demanda de los 517 en el año de test: {m ? <Money value={m.total_demand_test} compact /> : '…'}. Todo valor en dinero está a precio de
-              venta, no es margen.
-            </li>
-            <li>No incluye: tiendas o regiones por separado, pronóstico después del último día de datos, ni reentrenar el modelo.</li>
-          </ul>
-        </section>
+        <p className="small muted">El tablero no recalcula nada: muestra los resultados guardados del proyecto de datos. Todo valor en dinero está a precio de venta, así que no es ganancia.</p>
       </div>
 
-      <section className="section">
-        <h2>Los módulos</h2>
-        <div className="cards" style={{ marginTop: 10 }}>
-          {MODULES.map((mod) => (
-            <div key={mod.name} className="card">
-              <h2>{mod.name}</h2>
-              <p className="small"><strong>Responde:</strong> {mod.answers}</p>
-              <ol className="guide-list small">
-                {mod.how.map((h) => <li key={h}>{h}</li>)}
-              </ol>
-              <a href={hashFor(mod.path, scenario)}>Abrir {mod.name} →</a>
+      <div className="grid-2 section">
+        {MODULES.map((m) => (
+          <div key={m.title} className="card mod">
+            <div className="card-head">
+              <h2><span aria-hidden="true">{m.icon}</span> {m.title}</h2>
+              <a className="btn small" href={hashFor(m.path, 'A')}>Ir a {m.title} <span aria-hidden="true">→</span></a>
             </div>
-          ))}
-        </div>
-        <p className="small muted" style={{ marginTop: 10 }}>
-          Al pie del panel lateral, "Origen de los datos" lista cada archivo leído, su fecha y las verificaciones de las cifras.
-        </p>
-      </section>
+            <p><b>Para qué sirve:</b> {m.purpose}</p>
+            <ul className="steps">{m.steps.map((s) => <li key={s}>{s}</li>)}</ul>
+          </div>
+        ))}
+      </div>
 
-      <section className="card section" id="glosario">
-        <div className="module-controls" style={{ justifyContent: 'space-between' }}>
+      <div className="card section" id="glosario">
+        <div className="card-head">
           <h2>Glosario</h2>
-          <input
-            className="guide-search"
-            type="search"
-            placeholder="Buscar término…"
-            aria-label="Buscar en el glosario"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+          <input className="glo-search" placeholder="Buscar un término" aria-label="Buscar en el glosario" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        {entries.length === 0 && <p className="muted">“{q.trim()}” no aparece en el glosario.</p>}
-        {GLOSSARY_GROUPS.map((group) => {
-          const list = entries.filter((g) => g.group === group);
-          if (list.length === 0) return null;
-          return (
-            <div key={group} className="glossary-group">
-              <h3>{group}</h3>
-              <dl>
-                {list.map((g) => (
-                  <div key={g.id} id={`term-${g.id}`} className={`glossary-entry${g.id === term ? ' highlight' : ''}`}>
-                    <dt>{g.term}</dt>
-                    <dd>
-                      {g.definition}
-                      {g.unit && <span className="help-unit"> Unidad: {g.unit}.</span>}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          );
-        })}
-        <p className="small muted">{fmtNumber(GLOSSARY.length)} términos.</p>
-      </section>
+        {groups.length === 0 ? (
+          <p className="small muted">No hay términos con esa palabra. Prueba con otra, por ejemplo "sobrante" o "vitales".</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="glo-tbl">
+              <colgroup><col style={{ width: '22%' }} /><col /><col style={{ width: '22%' }} /></colgroup>
+              <thead><tr><th className="left">Término</th><th className="left">Qué significa</th><th className="left">Nombre técnico</th></tr></thead>
+              <tbody>
+                {groups.flatMap(({ grp, rows }) => [
+                  <tr key={grp} className="glo-grp"><th colSpan={3} className="left">{grp}</th></tr>,
+                  ...rows.map((g) => (
+                    <tr key={g.id} id={`term-${g.id}`}>
+                      <td className="left glo-t">{g.term}</td>
+                      <td className="left">{g.definition}{g.unit && <span className="muted"> Unidad: {g.unit}.</span>}</td>
+                      <td className="left glo-tec">{g.technical}</td>
+                    </tr>
+                  )),
+                ])}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </>
   );
 }

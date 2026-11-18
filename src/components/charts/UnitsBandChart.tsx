@@ -5,7 +5,6 @@ import { CartesianGrid, ComposedChart, Legend, Line, ReferenceArea, ReferenceLin
 import { fmtNumber, NOT_AVAILABLE } from '../../format';
 import { AXIS, COLOR, GRID, LEGEND, TOOLTIP } from '../../theme';
 import type { Descriptive, Scenario, SeriesRow } from '../../types';
-import { SCENARIO_LABEL } from '../Pill';
 
 /** Margen sobre el valor más alto para que las bandas y los rótulos no queden pegados al borde. */
 export const Y_HEADROOM = 0.08;
@@ -66,12 +65,12 @@ export function UnitsBandChart({ data, test, startDates, height = 340 }: { data:
         <YAxis {...AXIS} domain={[0, yMax]} allowDataOverflow tickFormatter={(v) => fmtNumber(v)} width={64} />
         <Tooltip
           {...TOOLTIP}
-          labelFormatter={(b) => `Bloque ${b}${startDates?.get(Number(b)) ? ` · inicia ${startDates.get(Number(b))}` : ''}`}
+          labelFormatter={(b) => `Periodo ${b}${startDates?.get(Number(b)) ? ` · inicia ${startDates.get(Number(b))}` : ''}`}
           formatter={(v) => (v === null || v === undefined ? NOT_AVAILABLE : `${fmtNumber(Number(v))} u.`)}
         />
         <Legend {...LEGEND} />
         {test && test.from > first && (
-          <ReferenceArea x1={first} x2={test.from} fill="none" ifOverflow="extendDomain" label={{ value: 'Train', position: 'insideTop', fill: COLOR.textMuted, fontSize: 12 }} />
+          <ReferenceArea x1={first} x2={test.from} fill="none" ifOverflow="extendDomain" label={{ value: 'Historia', position: 'insideTop', fill: COLOR.textMuted, fontSize: 12 }} />
         )}
         {test && (
           <ReferenceArea
@@ -79,7 +78,7 @@ export function UnitsBandChart({ data, test, startDates, height = 340 }: { data:
             x2={test.to}
             fill={COLOR.cyan}
             fillOpacity={0.1}
-            label={{ value: `Test (${test.to - test.from + 1} bloques)`, position: 'insideTop', fill: COLOR.cyan, fontSize: 12 }}
+            label={{ value: `Año de prueba (${test.to - test.from + 1} periodos)`, position: 'insideTop', fill: COLOR.cyan, fontSize: 12 }}
           />
         )}
         {stats.band_upper !== null && <ReferenceLine y={stats.band_upper} stroke={COLOR.slate} strokeDasharray="5 4" label={label('+3σ')} />}
@@ -87,15 +86,15 @@ export function UnitsBandChart({ data, test, startDates, height = 340 }: { data:
           <ReferenceLine y={lower} stroke={COLOR.slate} strokeDasharray="5 4" label={{ ...label(lowerBelowZero ? '−3σ < 0 (se dibuja en 0)' : '−3σ'), position: 'insideBottomRight' }} />
         )}
         <ReferenceLine y={stats.mean} stroke={COLOR.grey} strokeWidth={2} label={label('media')} />
-        <Line dataKey="units" name="Venta observada" stroke={COLOR.silver} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
+        <Line dataKey="units" name="Lo que se vendió" stroke={COLOR.silver} strokeWidth={2} dot={false} connectNulls={false} isAnimationActive={false} />
         {test && (
-          <Line dataKey="completed" name="Venta completada (quiebres tratados)" stroke={COLOR.silver} strokeWidth={2} strokeDasharray="4 4" dot={false} connectNulls={false} isAnimationActive={false} />
+          <Line dataKey="completed" name="Venta sin faltantes (estimada)" stroke={COLOR.silver} strokeWidth={2} strokeDasharray="4 4" dot={false} connectNulls={false} isAnimationActive={false} />
         )}
         {test && (
-          <Line dataKey="forecast" name={`Pronóstico ${SCENARIO_LABEL[test.scenario]}`} stroke={COLOR.cyan} strokeWidth={2} dot={{ r: 3, fill: COLOR.cyan }} connectNulls={false} isAnimationActive={false} />
+          <Line dataKey="forecast" name="Pronóstico" stroke={COLOR.cyan} strokeWidth={2} dot={{ r: 3, fill: COLOR.cyan }} connectNulls={false} isAnimationActive={false} />
         )}
         {test && (
-          <Line dataKey="baseline" name="Línea base (repetir el año anterior)" stroke={COLOR.plum} strokeWidth={2} dot={{ r: 3, fill: COLOR.plum }} connectNulls={false} isAnimationActive={false} />
+          <Line dataKey="baseline" name="Línea base" stroke={COLOR.coral} strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3, fill: COLOR.coral }} connectNulls={false} isAnimationActive={false} />
         )}
       </ComposedChart>
     </ResponsiveContainer>

@@ -1,6 +1,7 @@
 // Selector de artículo con escritura y despliegue (patrón combobox de WAI-ARIA).
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { fmtNumber } from '../format';
+import { cellName } from '../naming';
 import { hashFor } from '../router';
 import type { CatalogItem, Scenario } from '../types';
 
@@ -87,7 +88,7 @@ export function ItemCombobox({ items, forecastOnly, scenario }: { items: Catalog
               onClick={() => go(i.item_id)}
             >
               <span>{i.item_id}</span>
-              <span className="hint">{i.forecasted ? `${i.cell} · con pronóstico` : i.cell ?? 'sin celda'}</span>
+              <span className="hint">{i.forecasted ? `${cellName(i.cell)} · con pronóstico` : cellName(i.cell)}</span>
             </li>
           ))}
         </ul>

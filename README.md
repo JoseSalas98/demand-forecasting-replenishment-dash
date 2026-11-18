@@ -45,9 +45,9 @@ Un modelo de pronóstico que vive en un notebook tiene la misma influencia sobre
 
 > **EN.** **DDR Dashboard** is the **demand forecasting dashboard** that puts the results of [Demand Driven Replenishment](https://github.com/<usuario>/<repositorio-modelo>) on screen: the ABC × XYZ segmentation of 3,049 Walmart products, each product's sales history, the forecast for the 517 key products against the baseline, and the money impact on **inventory** and **supply chain** decisions. It is built for regional and operations managers.
 
-La meta: que la conversación sobre reposición pase de "el año pasado vendimos esto" a "con este nivel de servicio, esto es lo que dejamos de perder y lo que dejamos de acumular". Todo el tablero recorre el año de test, bloque a bloque, como si las decisiones se hubieran tomado en su momento.
+La meta: que la conversación sobre reposición pase de "el año pasado vendimos esto" a "con este nivel de servicio, esto es lo que dejamos de perder y lo que dejamos de acumular". Todo el tablero recorre el año de prueba, periodo a periodo de 4 semanas, como si las decisiones se hubieran tomado en su momento.
 
-> **EN.** The goal: to move the replenishment conversation from "this is what we sold last year" to "at this service level, this is the sales loss we avoid and the stock we stop piling up". The whole dashboard replays the test year, block by block, as if each decision had been made at the time.
+> **EN.** The goal: to move the replenishment conversation from "this is what we sold last year" to "at this service level, this is the sales loss we avoid and the stock we stop piling up". The whole dashboard replays the test year, period by period, as if each decision had been made at the time.
 
 ---
 
@@ -55,10 +55,11 @@ La meta: que la conversación sobre reposición pase de "el año pasado vendimos
 
 | Módulo · Module | Qué responde | What it answers |
 |---|---|---|
-| **Inicio** · *Home* | ¿De qué tamaño es el problema? | How big is the problem? |
-| **Segmentación** · *Segmentation* | ¿Qué productos sostienen el ingreso y cuáles venden de forma estable? Matriz ABC × XYZ, radar de perfiles y embudo de 3.049 a 517. | Which products carry the revenue and which sell steadily? ABC × XYZ matrix, profile radar and the 3,049 → 517 funnel. |
-| **Artículo** · *Product* | ¿Cómo se ha comportado este producto? Unidades y dinero por bloque de 28 días, bandas de ±3σ, distribución y, si aplica, el pronóstico frente a la línea base. | How has this product behaved? Units and money per 28-day block, ±3σ bands, distribution and, when available, the forecast against the baseline. |
-| **Impacto** · *Impact* | ¿Cuánto cuesta equivocarse? Venta perdida frente a inventario en exceso según el nivel de servicio, por segmento y por producto. | What does being wrong cost? Lost sales vs. excess inventory by service level, per segment and per product. |
+| **Inicio** · *Home* | Bienvenida y entrada al recorrido. | Welcome and entry point. |
+| **Segmentos** · *Segments* | ¿Qué productos sostienen el ingreso y cuáles venden de forma pareja? Vitales, Útiles y Complementarios × continuos, recurrentes y ocasionales (ABC × XYZ), radar de perfiles y embudo de 3.049 a 517. | Which products carry the revenue and which sell steadily? Vital, Useful and Complementary × continuous, recurring and occasional (ABC × XYZ), profile radar and the 3,049 → 517 funnel. |
+| **Artículo** · *Product* | ¿Cómo se ha comportado este producto? Unidades cada 4 semanas con el pronóstico frente a la línea base, el ahorro del artículo y, en el detalle, el cálculo, el error y la tabla exportable. | How has this product behaved? Units every 4 weeks with the forecast against the baseline, the product's savings and, in the detail page, the calculation, error and an exportable table. |
+| **Impacto** · *Impact* | ¿Cuánto vale pronosticar mejor? Dos maneras de aprovecharlo: liberar capital o recuperar ventas, según el % de demanda atendida, por grupo y por producto. | What is a better forecast worth? Two ways to use it: free up capital or recover sales, by share of demand served, per group and per product. |
+| **Cómo usar** · *How to use* | Para qué sirve cada sección y glosario. | What each section is for, plus glossary. |
 
 Un adelanto: con la misma disponibilidad del 95 %, el inventario en exceso cae un 77 % frente a repetir el año anterior. El resto de la historia está en el módulo de impacto.
 
@@ -82,8 +83,9 @@ flowchart LR
 ## Reglas de la casa · House rules
 
 - **El tablero muestra, no recalcula.** Segmentación, pronóstico e impacto se leen tal cual del modelo. *The dashboard displays; it does not recompute.*
-- **Escenarios separados.** El pronóstico a un paso (A) y el encadenado (B) nunca comparten una cifra. *Scenario A (one-step) and scenario B (chained) never share a number.*
-- **Precio de venta, no margen.** Todo valor en dinero lo dice. *Every money figure is at sale price and says so: it is not margin.*
+- **Un solo pronóstico en pantalla.** El tablero muestra un único pronóstico y no menciona el método. *One forecast on screen; the method is not shown.*
+- **Lecturas derivadas rotuladas.** Fuera del 95 %, las cifras de impacto se leen entre puntos de la curva exportada y se marcan como calculadas en el sitio. *Readings off the 95% point are interpolated from the exported curve and labeled as such.*
+- **Precio de venta, no margen.** Una etiqueta siempre visible en la barra superior lo dice. *An always-visible label in the top bar says every money figure is at sale price, not margin.*
 - **Pronóstico para quien lo tiene.** Los 3.049 productos tienen historia; solo los 517 modelados tienen pronóstico. El resto recibe un aviso honesto y un enlace al embudo. *All 3,049 products have history; only the 517 modeled ones have a forecast. The rest get an honest notice and a link to the funnel.*
 - **Un dato ausente se dice.** Se muestra como "no disponible", nunca como cero. *A missing value says so: "not available", never zero.*
 

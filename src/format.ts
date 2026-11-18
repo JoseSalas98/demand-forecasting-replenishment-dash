@@ -34,3 +34,18 @@ export function fmtRatio(cur: number | null | undefined, prev: number | null | u
   if (isMissing(cur) || isMissing(prev) || prev === 0) return NOT_AVAILABLE;
   return fmtNumber(cur / prev, 3);
 }
+
+/** Totales en millones con dos decimales ("3,28 M US$"); escala fija para todo un bloque. */
+export function fmtM(v: number | null | undefined): string {
+  if (isMissing(v)) return NOT_AVAILABLE;
+  return `${fmtNumber(v / 1e6, 2)} M US$`;
+}
+
+/** Tablas y fichas en miles sin centavos ("122 mil US$"); `bare` omite la unidad (va en el encabezado). */
+export function fmtK(v: number | null | undefined, bare = false): string {
+  if (isMissing(v)) return NOT_AVAILABLE;
+  return bare ? fmtNumber(v / 1e3) : `${fmtNumber(v / 1e3)} mil US$`;
+}
+
+/** Etiqueta global de dinero (constitución II.4): una sola vez, en la barra superior. */
+export const MONEY_NOTE = 'Cifras a precio de venta · no es margen';
