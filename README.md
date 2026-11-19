@@ -84,6 +84,7 @@ flowchart LR
 
 - **El tablero muestra, no recalcula.** Segmentación, pronóstico e impacto se leen tal cual del modelo. *The dashboard displays; it does not recompute.*
 - **Un solo pronóstico en pantalla.** El tablero muestra un único pronóstico y no menciona el método. *One forecast on screen; the method is not shown.*
+- **Bilingüe.** Todo el tablero está en español y en inglés; se elige con el botón ES | EN en Inicio o en la barra superior, y `?lang=en` abre en inglés. *The whole dashboard is available in Spanish and English; pick it with the ES | EN button on Home or in the top bar, and `?lang=en` opens it in English.*
 - **Lecturas derivadas rotuladas.** Fuera del 95 %, las cifras de impacto se leen entre puntos de la curva exportada y se marcan como calculadas en el sitio. *Readings off the 95% point are interpolated from the exported curve and labeled as such.*
 - **Precio de venta, no margen.** Una etiqueta siempre visible en la barra superior lo dice. *An always-visible label in the top bar says every money figure is at sale price, not margin.*
 - **Pronóstico para quien lo tiene.** Los 3.049 productos tienen historia; solo los 517 modelados tienen pronóstico. El resto recibe un aviso honesto y un enlace al embudo. *All 3,049 products have history; only the 517 modeled ones have a forecast. The rest get an honest notice and a link to the funnel.*

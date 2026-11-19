@@ -1,13 +1,14 @@
 // Ícono "?" con la definición y la unidad de un término del glosario (src/glossary.ts).
 // Se abre al pasar el cursor, con el foco del teclado o con un clic (pantallas táctiles).
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
-import { GLOSSARY_BY_ID } from '../glossary';
+import { glossaryEntry } from '../glossary';
+import { t } from '../i18n';
 import { hashFor } from '../router';
 import type { Scenario } from '../types';
 
 /** `extra` agrega el valor real del grupo elegido bajo la definición. */
 export function HelpTip({ id, scenario = 'A', extra }: { id: string; scenario?: Scenario; extra?: ReactNode }) {
-  const entry = GLOSSARY_BY_ID[id];
+  const entry = glossaryEntry(id);
   const [open, setOpen] = useState(false);
   const [pinned, setPinned] = useState(false);
   const tipId = useId();
@@ -43,7 +44,7 @@ export function HelpTip({ id, scenario = 'A', extra }: { id: string; scenario?: 
       <button
         type="button"
         className="help-btn"
-        aria-label={`Qué es ${entry.term}`}
+        aria-label={t().help.whatIs(entry.term)}
         aria-describedby={show ? tipId : undefined}
         aria-expanded={show}
         onFocus={() => setOpen(true)}
@@ -59,9 +60,9 @@ export function HelpTip({ id, scenario = 'A', extra }: { id: string; scenario?: 
         <span className="help-pop" role="tooltip" id={tipId}>
           <strong>{entry.term}</strong>
           <span>{entry.definition}</span>
-          {entry.unit && <span className="help-unit">Unidad: {entry.unit}</span>}
+          {entry.unit && <span className="help-unit">{t().help.unit(entry.unit)}</span>}
           {extra && <span className="help-extra">{extra}</span>}
-          <a href={hashFor(`/guia/glosario/${entry.id}`, scenario)} onMouseDown={(e) => e.preventDefault()}>Ver en el glosario →</a>
+          <a href={hashFor(`/guia/glosario/${entry.id}`, scenario)} onMouseDown={(e) => e.preventDefault()}>{t().help.seeGlossary}</a>
         </span>
       )}
     </span>

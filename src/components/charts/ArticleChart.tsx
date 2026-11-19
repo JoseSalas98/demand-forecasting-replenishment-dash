@@ -1,7 +1,8 @@
 // Unidades por periodo del artículo (FR-031/032): lo vendido, la venta sin faltantes, el pronóstico y
 // la línea base con marcadores; etiqueta de datos al pasar el cursor; acercamiento al año de prueba.
 import { useMemo, useState } from 'react';
-import { fmtNumber } from '../../format';
+import { fmtDate, fmtNumber, monthShort } from '../../format';
+import { t } from '../../i18n';
 import { COLOR } from '../../theme';
 import { Pill } from '../Pill';
 import { ChartTip, TipRow, useChartTip } from './ChartTip';
@@ -16,26 +17,19 @@ export interface ArticleRow {
 }
 
 type Key = 'observed' | 'completed' | 'forecast' | 'baseline';
-const SERIES: { key: Key; name: string; color: string; dash?: string; width: number }[] = [
-  { key: 'observed', name: 'Lo que se vendió', color: COLOR.silver, width: 1.6 },
-  { key: 'completed', name: 'Venta sin faltantes (estimada)', color: COLOR.slate, dash: '3 4', width: 1.4 },
-  { key: 'forecast', name: 'Pronóstico', color: COLOR.cyan, width: 2.6 },
-  { key: 'baseline', name: 'Línea base', color: COLOR.coral, dash: '6 4', width: 2 },
+const SERIES: { key: Key; color: string; dash?: string; width: number }[] = [
+  { key: 'observed', color: COLOR.silver, width: 1.6 },
+  { key: 'completed', color: COLOR.slate, dash: '3 4', width: 1.4 },
+  { key: 'forecast', color: COLOR.cyan, width: 2.6 },
+  { key: 'baseline', color: COLOR.coral, dash: '6 4', width: 2 },
 ];
-const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+const seriesName = (k: Key): string => t().chart[k];
 
-/** "25 may 2015" a partir de "2015-05-25". */
 /** Etiqueta del eje Y: unidades sueltas si la escala es pequeña; miles si no. */
 export function tickLabel(v: number, max: number): string {
   if (!v) return '0';
   if (max < 2000) return fmtNumber(v, v % 1 ? 1 : 0);
-  return `${fmtNumber(v / 1000, v % 1000 ? 1 : 0)} mil`;
-}
-
-export function fmtDate(iso: string | undefined): string {
-  if (!iso) return 'fecha no disponible';
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${d} ${MONTHS[m - 1]} ${y}`;
+  return t().chart.thousands(fmtNumber(v / 1000, v % 1000 ? 1 : 0));
 }
 
 export function ArticleChart({ rows, test, stats, startDates }: {
@@ -73,7 +67,7 @@ export function ArticleChart({ rows, test, stats, startDates }: {
   const xTicks: [number, string][] = zoom
     ? shown.filter((_, i) => i % 2 === 0).map((r) => {
         const d = startDates.get(r.block);
-        return [r.block, d ? `${MONTHS[Number(d.slice(5, 7)) - 1]} ${d.slice(2, 4)}` : String(r.block)];
+        return [r.block, d ? `${monthShort(Number(d.slice(5, 7)) - 1)} ${d.slice(2, 4)}` : String(r.block)];
       })
     : [...years.entries()].filter(([b]) => b > first).map(([b, y]) => [b, String(y)]);
 
@@ -96,15 +90,15 @@ export function ArticleChart({ rows, test, stats, startDates }: {
         <div className="legend" role="group" aria-label="Series">
           {SERIES.filter((s) => test || s.key === 'observed').map((s) => (
             <button key={s.key} type="button" className="lg" aria-pressed={on[s.key]} onClick={() => setOn({ ...on, [s.key]: !on[s.key] })}>
-              <i style={{ background: s.color }} />{s.name}
+              <i style={{ background: s.color }} />{seriesName(s.key)}
             </button>
           ))}
-          <button type="button" className="lg" aria-pressed={bands} onClick={() => setBands(!bands)}><i style={{ background: COLOR.grey }} />Media y ±3σ</button>
+          <button type="button" className="lg" aria-pressed={bands} onClick={() => setBands(!bands)}><i style={{ background: COLOR.grey }} />{t().chart.bands}</button>
         </div>
         {test && (
-          <div className="seg-toggle" role="group" aria-label="Rango de la gráfica">
-            <Pill small active={!zoom} onClick={() => setZoom(false)}>Toda la historia</Pill>
-            <Pill small active={zoom} onClick={() => setZoom(true)}>Año de prueba</Pill>
+          <div className="seg-toggle" role="group" aria-label={t().chart.rangeAria}>
+            <Pill small active={!zoom} onClick={() => setZoom(false)}>{t().chart.allHistory}</Pill>
+            <Pill small active={zoom} onClick={() => setZoom(true)}>{t().chart.testYear}</Pill>
           </div>
         )}
       </div>
@@ -117,18 +111,18 @@ export function ArticleChart({ rows, test, stats, startDates }: {
             </g>
           ))}
           {xTicks.map(([b, l]) => <text key={b} x={X(b)} y={H - m.b + 18} textAnchor="middle" className="tick">{l}</text>)}
-          <text x={m.l} y={11} className="axis-label">unidades</text>
+          <text x={m.l} y={11} className="axis-label">{t().chart.unitsAxis}</text>
           {test && (
             <g>
               <rect x={X(Math.max(x0, test.from - 0.5))} y={m.t} width={X(Math.min(x1, test.to + 0.5)) - X(Math.max(x0, test.from - 0.5))} height={H - m.t - m.b} className="test-shade" />
-              <text x={(X(Math.max(x0, test.from - 0.5)) + X(Math.min(x1, test.to + 0.5))) / 2} y={m.t + 14} textAnchor="middle" className="axis-label">año de prueba</text>
+              <text x={(X(Math.max(x0, test.from - 0.5)) + X(Math.min(x1, test.to + 0.5))) / 2} y={m.t + 14} textAnchor="middle" className="axis-label">{t().chart.testYearLabel}</text>
             </g>
           )}
           {bands && stats.band_upper !== null && (
             <g>
               <rect x={X(x0)} y={Y(Math.min(stats.band_upper, yMax))} width={X(x1) - X(x0)} height={Y(0) - Y(Math.min(stats.band_upper, yMax))} className="band" />
               <line x1={X(x0)} x2={X(x1)} y1={Y(stats.mean)} y2={Y(stats.mean)} stroke={COLOR.grey} strokeWidth={2} />
-              <text x={X(x0) + 6} y={Y(stats.mean) - 5} className="axis-label">media</text>
+              <text x={X(x0) + 6} y={Y(stats.mean) - 5} className="axis-label">{t().chart.mean}</text>
               {stats.band_upper <= yMax && <text x={X(x0) + 6} y={Y(stats.band_upper) - 5} className="axis-label">+3σ</text>}
             </g>
           )}
@@ -163,10 +157,10 @@ export function ArticleChart({ rows, test, stats, startDates }: {
               const stockout = row.observed !== null && row.completed !== null && row.observed < row.completed * 0.8;
               show(e, (
                 <>
-                  <strong>Periodo del {fmtDate(startDates.get(b))}</strong>
-                  {inTest && <span className="tip-foot" style={{ marginTop: 0 }}>año de prueba</span>}
-                  {series.filter((s) => row[s.key] !== null).map((s) => <TipRow key={s.key} color={s.color} label={s.name} value={`${fmtNumber(row[s.key])} u.`} />)}
-                  {stockout && <span className="tip-foot">Hubo faltante de producto en este periodo.</span>}
+                  <strong>{t().chart.periodOf(fmtDate(startDates.get(b)))}</strong>
+                  {inTest && <span className="tip-foot" style={{ marginTop: 0 }}>{t().chart.testYearLabel}</span>}
+                  {series.filter((s) => row[s.key] !== null).map((s) => <TipRow key={s.key} color={s.color} label={seriesName(s.key)} value={t().common.units(fmtNumber(row[s.key]))} />)}
+                  {stockout && <span className="tip-foot">{t().chart.stockout}</span>}
                 </>
               ));
             }}

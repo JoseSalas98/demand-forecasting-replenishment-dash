@@ -5,7 +5,8 @@ import { CartesianGrid, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAx
 import { ModuleHeader } from '../components/ModuleHeader';
 import { LoadError, Loading } from '../components/StateViews';
 import { useData } from '../data';
-import { fmtK, fmtM, fmtNumber, fmtPct, NOT_AVAILABLE } from '../format';
+import { fmtK, fmtM, fmtNumber, fmtPct } from '../format';
+import { t } from '../i18n';
 import { cellName } from '../naming';
 import { hashFor } from '../router';
 import { AXIS, CELL_COLOR, GRID, TOOLTIP } from '../theme';
@@ -20,6 +21,7 @@ export function SegmentDetailView({ cell }: { cell: string }) {
   const segs = useData<Segments>('segments.json');
   const items = useData<Items>('items.json');
   const [sort, setSort] = useState<{ key: SortKey; desc: boolean }>({ key: 'spend_train', desc: true });
+  const s = t().segDetail;
 
   const rows = useMemo(() => {
     if (items.status !== 'ready') return [];
@@ -41,29 +43,29 @@ export function SegmentDetailView({ cell }: { cell: string }) {
       });
   }, [items, cell, sort]);
 
-  const back = <p><a className="btn small" href={hashFor('/segmentacion', 'A')}><span aria-hidden="true">←</span> Volver a Segmentos</a></p>;
+  const back = <p><a className="btn small" href={hashFor('/segmentacion', 'A')}><span aria-hidden="true">←</span> {s.back}</a></p>;
   if (!MAIN.includes(cell as Cell)) {
     return (
       <>
         {back}
-        <ModuleHeader title="Detalle de los grupos con pronóstico" />
-        <div className="note">Detalle {NOT_AVAILABLE} para “{cellName(cell)}”: solo los tres grupos Vitales tienen pronóstico.</div>
+        <ModuleHeader title={s.title} />
+        <div className="note">{s.notAvailable(cellName(cell))}</div>
       </>
     );
   }
-  for (const s of [segs, items]) if (s.status === 'error') return <LoadError error={s.error} />;
+  for (const st of [segs, items]) if (st.status === 'error') return <LoadError error={st.error} />;
   if (segs.status !== 'ready' || items.status !== 'ready') return <Loading />;
 
   const seg = segs.data.segments;
   const cols: SegmentKey[] = [...MAIN, 'total'];
   const table: [string, (k: SegmentKey) => string][] = [
-    ['Artículos pronosticados', (k) => fmtNumber(seg[k].n_items)],
-    ['Venta de entrenamiento', (k) => fmtM(seg[k].spend_train)],
-    ['% de la venta de la cadena', (k) => fmtPct(seg[k].spend_share * 100)],
-    ['Error del pronóstico (WAPE)', (k) => pct(seg[k].error.one_step.wape)],
-    ['Error de la línea base (WAPE)', (k) => pct(seg[k].error.seasonal_naive.wape)],
-    ['Error comparable · pronóstico (WRMSSE)', (k) => fmtNumber(seg[k].error.one_step.wrmsse, 3)],
-    ['Error comparable · línea base (WRMSSE)', (k) => fmtNumber(seg[k].error.seasonal_naive.wrmsse, 3)],
+    [s.rows.n, (k) => fmtNumber(seg[k].n_items)],
+    [s.rows.spend, (k) => fmtM(seg[k].spend_train)],
+    [s.rows.share, (k) => fmtPct(seg[k].spend_share * 100)],
+    [s.rows.wape, (k) => pct(seg[k].error.one_step.wape)],
+    [s.rows.wapeBase, (k) => pct(seg[k].error.seasonal_naive.wape)],
+    [s.rows.wrmsse, (k) => fmtNumber(seg[k].error.one_step.wrmsse, 3)],
+    [s.rows.wrmsseBase, (k) => fmtNumber(seg[k].error.seasonal_naive.wrmsse, 3)],
   ];
   const points = MAIN.flatMap((c, k) => seg[c].cv_train.map((cv, i) => ({ x: k + 1 + ((i % 9) - 4) * 0.03, cv, cell: c })));
   const header = (key: SortKey, label: string, left = false) => (
@@ -77,8 +79,8 @@ export function SegmentDetailView({ cell }: { cell: string }) {
   return (
     <>
       {back}
-      <ModuleHeader title="Detalle de los grupos con pronóstico" subtitle="Error del pronóstico por grupo y artículos que lo componen" />
-      <div className="tabs" role="tablist" aria-label="Grupo">
+      <ModuleHeader title={s.title} subtitle={s.subtitle} />
+      <div className="tabs" role="tablist" aria-label={s.tabs}>
         {MAIN.map((c) => (
           <a key={c} role="tab" aria-selected={c === cell} className={`pill${c === cell ? ' active' : ''}`} href={hashFor(`/segmentacion/${c}`, 'A')}>
             <i className="dot" style={{ background: CELL_COLOR[c] }} />{cellName(c)}
@@ -87,11 +89,11 @@ export function SegmentDetailView({ cell }: { cell: string }) {
       </div>
 
       <div className="card section">
-        <h2>Comparación de los tres grupos</h2>
+        <h2>{s.compare}</h2>
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th className="left">Indicador</th>{cols.map((k) => <th key={k} className={k === cell ? 'hl' : undefined}>{k === 'total' ? 'Total' : cellName(k)}</th>)}</tr>
+              <tr><th className="left">{s.indicator}</th>{cols.map((k) => <th key={k} className={k === cell ? 'hl' : undefined}>{k === 'total' ? s.total : cellName(k)}</th>)}</tr>
             </thead>
             <tbody>
               {table.map(([label, f]) => (
@@ -100,24 +102,24 @@ export function SegmentDetailView({ cell }: { cell: string }) {
             </tbody>
           </table>
         </div>
-        <p className="small muted">Año de prueba: 13 periodos de 4 semanas. WAPE: de cada 100 unidades vendidas, en cuántas se equivoca. WRMSSE: error ponderado de la competencia M5 (menor es mejor).</p>
+        <p className="small muted">{s.compareNote}</p>
       </div>
 
       <div className="card section">
         <div className="card-head">
-          <h2>Artículos de {cellName(cell)} · {fmtNumber(rows.length)}</h2>
-          <span className="small muted">Pulsa un encabezado para ordenar · cifras en mil US$</span>
+          <h2>{s.itemsOf(cellName(cell), fmtNumber(rows.length))}</h2>
+          <span className="small muted">{s.sortHint}</span>
         </div>
         <div className="table-wrap scroll">
           <table>
             <thead>
               <tr>
-                {header('item_id', 'Artículo', true)}
-                {header('spend_train', 'Venta de entrenamiento')}
-                {header('cv_train', 'Variabilidad (CV)')}
-                {header('wape', 'Error (WAPE)')}
-                {header('saving', 'Ahorro neto')}
-                <th className="left">Revisión</th>
+                {header('item_id', s.colItem, true)}
+                {header('spend_train', s.colSpend)}
+                {header('cv_train', s.colCv)}
+                {header('wape', s.colWape)}
+                {header('saving', s.colSaving)}
+                <th className="left">{s.colReview}</th>
               </tr>
             </thead>
             <tbody>
@@ -125,10 +127,10 @@ export function SegmentDetailView({ cell }: { cell: string }) {
                 <tr key={i.item_id}>
                   <td className="left"><a className="btn small" href={hashFor(`/articulo/${i.item_id}`, 'A')}>{i.item_id} <span aria-hidden="true">→</span></a></td>
                   <td>{fmtK(i.spend_train, true)}</td>
-                  <td>{fmtNumber(i.cv_train, 1)} %</td>
+                  <td>{fmtPct(i.cv_train, 1)}</td>
                   <td>{pct(i.metrics.A.wape_units)}</td>
                   <td className={i.impact.A.impact < 0 ? 'neg' : undefined}>{fmtK(i.impact.A.impact, true)}</td>
-                  <td className="left">{i.metrics.A.review && <span className="tag">⚑ marcado</span>}</td>
+                  <td className="left">{i.metrics.A.review && <span className="tag">{s.flagged}</span>}</td>
                 </tr>
               ))}
             </tbody>
@@ -137,19 +139,19 @@ export function SegmentDetailView({ cell }: { cell: string }) {
       </div>
 
       <div className="card section">
-        <h2>Variabilidad de cada artículo (CV de train)</h2>
+        <h2>{s.cvTitle}</h2>
         <ResponsiveContainer width="100%" height={260}>
           <ScatterChart margin={{ left: 0, right: 16, top: 10 }}>
             <CartesianGrid {...GRID} />
             <XAxis {...AXIS} type="number" dataKey="x" domain={[0.5, 3.5]} ticks={[1, 2, 3]} tickFormatter={(v) => cellName(MAIN[v - 1] ?? '')} />
-            <YAxis {...AXIS} type="number" dataKey="cv" name="CV de train" width={50} />
-            <Tooltip {...TOOLTIP} formatter={(v: number, n: string) => (n === 'CV de train' ? fmtNumber(v, 1) : '')} />
+            <YAxis {...AXIS} type="number" dataKey="cv" name={s.cvName} width={50} />
+            <Tooltip {...TOOLTIP} formatter={(v: number, n: string) => (n === s.cvName ? fmtNumber(v, 1) : '')} />
             {MAIN.map((c) => (
               <Scatter key={c} name={cellName(c)} data={points.filter((p) => p.cell === c)} fill={CELL_COLOR[c]} fillOpacity={0.55} isAnimationActive={false} />
             ))}
           </ScatterChart>
         </ResponsiveContainer>
-        <p className="small muted">Un punto por artículo; más arriba, venta más variable de un periodo a otro.</p>
+        <p className="small muted">{s.cvNote}</p>
       </div>
     </>
   );

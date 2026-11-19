@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { UnitsBandChart } from '../components/charts/UnitsBandChart';
-import { fmtDate } from '../components/charts/ArticleChart';
 import { ImpactContext } from '../components/ImpactContext';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { Money } from '../components/Money';
 import { Saving } from '../components/Saving';
 import { LoadError, Loading } from '../components/StateViews';
 import { useData } from '../data';
-import { fmtNumber } from '../format';
+import { fmtDate, fmtNumber } from '../format';
+import { t } from '../i18n';
 import { hashFor } from '../router';
 import type { Descriptive, Items, ItemSeries, Meta, Scenario, Segments } from '../types';
 
@@ -23,16 +23,17 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
   const series = useData<ItemSeries>(item ? `series/${item.item_id}.json` : null);
   const descriptive = useData<Descriptive>(item ? `descriptive/${item.item_id}.json` : null);
   const [step, setStep] = useState(1);
+  const p = t().play;
   useEffect(() => setStep(1), [scenario, itemId]); // cambiar de artículo reinicia
   const startDates = useMemo(
     () => new Map(meta.status === 'ready' ? meta.data.blocks.map((b) => [b.block, b.start_date] as [number, string]) : []),
     [meta],
   );
 
-  for (const s of [items, meta]) if (s.status === 'error') return <LoadError error={s.error} />;
+  for (const st of [items, meta]) if (st.status === 'error') return <LoadError error={st.error} />;
   if (items.status !== 'ready' || meta.status !== 'ready') return <Loading />;
-  if (!item) return <p>“{itemId}” no está entre los 517 pronosticados.</p>;
-  for (const s of [series, descriptive]) if (s.status === 'error') return <LoadError error={s.error} />;
+  if (!item) return <p>{p.notForecast(itemId)}</p>;
+  for (const st of [series, descriptive]) if (st.status === 'error') return <LoadError error={st.error} />;
   if (series.status !== 'ready' || descriptive.status !== 'ready') return <Loading />;
 
   const testRows = series.data.rows.filter((r) => r.step !== null);
@@ -51,18 +52,18 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
 
   return (
     <>
-      <p><a className="btn small" href={hashFor(`/articulo/${item.item_id}/detalle`, scenario)}><span aria-hidden="true">←</span> Volver al detalle de {item.item_id}</a></p>
+      <p><a className="btn small" href={hashFor(`/articulo/${item.item_id}/detalle`, scenario)}><span aria-hidden="true">←</span> {p.back(item.item_id)}</a></p>
       <ModuleHeader
-        title={`Año de prueba paso a paso · ${item.item_id}`}
-        subtitle="Reproduce el año de prueba periodo a periodo"
+        title={p.title(item.item_id)}
+        subtitle={p.subtitle}
       />
       <div className="controls">
-        <button className="btn" onClick={() => setStep(1)} disabled={step === 1}>Reiniciar</button>
-        <button className="btn" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}>◀ anterior</button>
-        <button className="btn" onClick={() => setStep(Math.min(n, step + 1))} disabled={step === n}>siguiente ▶</button>
-        <button className="btn" onClick={() => setStep(n)} disabled={step === n}>Ver el año completo</button>
-        <strong>Paso {step} de {n}</strong>
-        {current && <span className="muted">periodo {current.block} · inicia {fmtDate(startDates.get(current.block))}</span>}
+        <button className="btn" onClick={() => setStep(1)} disabled={step === 1}>{p.restart}</button>
+        <button className="btn" onClick={() => setStep(Math.max(1, step - 1))} disabled={step === 1}>{p.prev}</button>
+        <button className="btn" onClick={() => setStep(Math.min(n, step + 1))} disabled={step === n}>{p.next}</button>
+        <button className="btn" onClick={() => setStep(n)} disabled={step === n}>{p.full}</button>
+        <strong>{p.step(String(step), String(n))}</strong>
+        {current && <span className="muted">{p.current(String(current.block), fmtDate(startDates.get(current.block)))}</span>}
       </div>
       <div className="card">
         <UnitsBandChart
@@ -70,18 +71,12 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
           test={{ from: item.test_blocks[0], to: item.test_blocks[1], rows: series.data.rows, scenario, revealUpTo: current?.block }}
           startDates={startDates}
         />
-        <p className="small muted">
-          Lo que se vendió es lo registrado; la venta sin faltantes estima lo que se habría vendido con producto disponible y es contra la que
-          se mide el pronóstico.
-        </p>
+        <p className="small muted">{p.chartNote}</p>
       </div>
       <div className="table-wrap section">
         <table>
           <thead>
-            <tr>
-              <th>Paso</th><th>Periodo</th><th>Lo que se vendió</th><th>Venta sin faltantes</th><th>Pronóstico</th><th>Línea base</th>
-              <th>Acum. venta sin faltantes</th><th>Acum. pronóstico</th><th>Acum. línea base</th>
-            </tr>
+            <tr>{p.cols.map((c) => <th key={c}>{c}</th>)}</tr>
           </thead>
           <tbody>
             {acc.map(({ r, f, accReal, accFc, accBase }) => (
@@ -94,18 +89,18 @@ export function PlaygroundView({ itemId, scenario }: { itemId: string; scenario:
           </tbody>
         </table>
       </div>
-      <p className="small muted">Unidades. El impacto en dinero existe solo para el año completo, no por periodo.</p>
+      <p className="small muted">{p.unitsNote}</p>
       {step === n && (
         <div className="card section">
-          <h2>Resultado del año</h2>
+          <h2>{p.resultTitle}</h2>
           <div className="grid-2">
             <div>
-              <div className="label">Ahorro frente a la línea base (colchón fijo)</div>
-              <div>{imp.impact < 0 ? 'En este artículo ' : ''}<Saving value={imp.impact} /></div>
+              <div className="label">{p.savingLabel}</div>
+              <div>{imp.impact < 0 ? p.inThisItem : ''}<Saving value={imp.impact} /></div>
             </div>
             <div className="small">
-              <div>Ventas perdidas: pronóstico <Money value={imp.lost_model} /> · línea base <Money value={imp.lost_naive} /></div>
-              <div>Mercancía sobrante: pronóstico <Money value={imp.excess_model} /> · línea base <Money value={imp.excess_naive} /></div>
+              <div>{p.lost}<Money value={imp.lost_model} />{p.baseline}<Money value={imp.lost_naive} /></div>
+              <div>{p.excess}<Money value={imp.excess_model} />{p.baseline}<Money value={imp.excess_naive} /></div>
             </div>
           </div>
           {segs.status === 'ready' && <ImpactContext impact={imp} concentration={segs.data.concentration[scenario]} />}

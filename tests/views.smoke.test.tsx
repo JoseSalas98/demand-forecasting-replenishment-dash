@@ -1,13 +1,15 @@
 // @vitest-environment jsdom
-// Prueba de humo (spec 002): cada vista se renderiza con los JSON reales de public/data, sin errores,
-// con la etiqueta global de dinero, en lenguaje de gerencia y sin mencionar el método del pronóstico.
+// Prueba de humo (specs 002 y 003): cada vista se renderiza con los JSON reales de public/data, sin
+// errores, con la etiqueta global de dinero, en lenguaje de gerencia, sin mencionar el método del
+// pronóstico, y en los dos idiomas.
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/App';
-import { GLOSSARY_BY_ID } from '../src/glossary';
+import { glossaryEntry } from '../src/glossary';
+import { setLang } from '../src/i18n';
 import { legacyRedirect, parseHash } from '../src/router';
 
 const DATA = join(__dirname, '..', 'public', 'data');
@@ -36,6 +38,8 @@ beforeAll(() => {
 
 afterEach(() => {
   document.body.innerHTML = '';
+  window.localStorage.clear();
+  setLang('es', false);
 });
 
 /** Renderiza la ruta; `inspect` recibe el DOM antes de desmontar. */
@@ -115,7 +119,7 @@ describe.skipIf(!hasData)('vistas con datos reales', () => {
 
   it('segmentos: ayuda "?" en cada barra con definición y valor en unidades', async () => {
     const seg = JSON.parse(readFileSync(join(DATA, 'segmentation.json'), 'utf-8'));
-    for (const axis of seg.radar.axes) expect(GLOSSARY_BY_ID[axis]?.unit).toBeTruthy();
+    for (const axis of seg.radar.axes) expect(glossaryEntry(axis)?.unit).toBeTruthy();
     await render('#/segmentacion', (el) => {
       const buttons = [...el.querySelectorAll<HTMLButtonElement>('.hbars .help-btn')];
       expect(buttons).toHaveLength(seg.radar.axes.length);
@@ -139,8 +143,14 @@ describe.skipIf(!hasData)('vistas con datos reales', () => {
     expect(await render('#/segmentacion/total')).toContain('Detalle no disponible');
   });
 
-  it('artículo sin id abre uno por defecto', async () => {
-    expect(await render('#/articulo')).toContain('Artículo FOODS_3_090');
+  it('artículo sin id: estado vacío con el buscador destacado', async () => {
+    const t = await render('#/articulo', (el) => {
+      expect(el.querySelector('.combo.combo-lg')).not.toBeNull();
+      expect(el.querySelector('.combo-toggle')).not.toBeNull();
+      expect(el.querySelector('.article-chart')).toBeNull();
+    });
+    expect(t).toContain('Elige un artículo');
+    expect(t).not.toContain('FOODS_3_090');
   });
 
   it('FOODS_1_004: frase de acierto, gráfica con pronóstico y línea base, ahorro', async () => {
@@ -228,5 +238,91 @@ describe.skipIf(!hasData)('vistas con datos reales', () => {
     expect(t).toContain('impact_sum_matches_total_A');
     expect(t).toContain('Pendientes');
     expect(t).toContain('ninguno');
+  });
+});
+
+describe.skipIf(!hasData)('versión en inglés (spec 003)', () => {
+  // Palabras de la interfaz en español que no deben quedar en inglés
+  const SPANISH = /\b(artículos?|pronóstico|línea base|sobrante|ventas?|periodos?|año de prueba|cifras|ahorro|grupo|tiendas|catálogo|detalle)\b/i;
+  const english = (t: string) => {
+    expect(t).not.toMatch(SPANISH);
+    expect(t).toContain('Figures at retail price · not margin');
+  };
+
+  it('el botón EN de Inicio cambia todo a inglés y lo recuerda', async () => {
+    await render('#/', (el) => {
+      const en = [...el.querySelectorAll<HTMLButtonElement>('.home-lang .lang-btn')].find((b) => b.textContent === 'English');
+      act(() => en!.click());
+      expect(el.textContent).toContain('Explore the segments');
+      expect(el.textContent).toContain('Figures at retail price · not margin');
+      expect(document.documentElement.lang).toBe('en');
+    });
+    expect(window.localStorage.getItem('ddr-lang')).toBe('en');
+    expect(await render('#/')).toContain('Explore the segments');
+  });
+
+  it('?lang=en abre en inglés: inicio', async () => {
+    const t = await render('#/?lang=en');
+    english(t);
+    expect(t).toContain('Demand-driven');
+    expect(t).toContain('Walmart · 10 stores · 2011–2016');
+  });
+
+  it('segmentos en inglés con formato de EE. UU.', async () => {
+    const t = await render('#/segmentacion?lang=en');
+    english(t);
+    for (const s of ['Vital', 'Useful', 'Complementary', 'continuous', 'recurring', 'occasional', 'Continuous vitals']) expect(t).toContain(s);
+    expect(t).toContain('With a forecast: 191 of 207');
+    expect(t).toContain('162 products without a regularity class');
+    for (const n of ['30,490', '3,049', '592', '517', '52%', 'US$21.86M', '75']) expect(t).toContain(n);
+  });
+
+  it('detalle de los grupos en inglés', async () => {
+    const t = await render('#/segmentacion/AX?lang=en');
+    english(t);
+    expect(t).toContain('The three groups side by side');
+    for (const s of ['0.495', '0.868', 'Products in Continuous vitals · 191']) expect(t).toContain(s);
+  });
+
+  it('artículo sin elegir y ficha en inglés', async () => {
+    english(await render('#/articulo?lang=en'));
+    expect(await render('#/articulo?lang=en')).toContain('Choose a product');
+    const t = await render('#/articulo/FOODS_1_004?lang=en');
+    english(t);
+    expect(t).toContain('got 86 out of every 100 units right');
+    expect(t).toContain('would have saved US$12K');
+    expect(t).toContain('net savings over the year');
+  });
+
+  it('detalle del pronóstico en inglés', async () => {
+    const t = await render('#/articulo/FOODS_1_004/detalle?lang=en');
+    english(t);
+    for (const s of ['periods 53–65', 'US$11,559', '17.9% *', 'calculated on the site', 'Export CSV']) expect(t).toContain(s);
+  });
+
+  it('impacto en inglés al 95 %', async () => {
+    const t = await render('#/impacto?lang=en', (el) => {
+      const btn = [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.includes('See how it is calculated'));
+      act(() => btn!.click());
+      expect(el.querySelector('#imp-detail')?.textContent).toContain('US$3.45M');
+    });
+    english(t);
+    for (const s of ['Free up capital', 'Recover sales', 'US$3.28M', 'US$0.91M', 'US$0.55M', 'US$1.33M', 'US$1.40M', 'The 10 products that save the most']) expect(t).toContain(s);
+  });
+
+  it('cómo usar y glosario en inglés', async () => {
+    const t = await render('#/guia?lang=en');
+    english(t);
+    for (const s of ['What is this dashboard for?', 'What it is for:', 'Glossary', 'Excess stock', 'Technical name', 'WAPE']) expect(t).toContain(s);
+    expect(await render('#/guia/glosario/velocity?lang=en')).toContain('What the product sells on a typical day');
+  });
+
+  it('paso a paso y origen de los datos en inglés', async () => {
+    const t = await render('#/articulo/FOODS_1_004/playground?lang=en');
+    english(t);
+    expect(t).toContain('Step 1 of 13');
+    const s = await render('#/datos?lang=en');
+    expect(s).toContain('Sources read');
+    expect(s).toContain('shown exactly as the exporter writes them');
   });
 });

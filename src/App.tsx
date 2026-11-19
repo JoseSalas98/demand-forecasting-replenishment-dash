@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Topbar } from './components/Topbar';
+import { getLang, langFromHash, setLang, t, useLang } from './i18n';
 import { hashFor, useRoute } from './router';
 import type { Scenario } from './types';
 import { DataSourcesView } from './views/DataSourcesView';
@@ -17,7 +19,13 @@ const SCENARIO: Scenario = 'A';
 
 export function App() {
   const { route, params, forecastOnly } = useRoute();
+  const lang = useLang();
   const scenario = SCENARIO;
+  // Un enlace con ?lang=en abre en ese idioma, también al navegar dentro del sitio (spec 003)
+  useEffect(() => {
+    const fromHash = langFromHash(window.location.hash);
+    if (fromHash && fromHash !== getLang()) setLang(fromHash, false);
+  }, [route, params.itemId, params.cell, params.term]);
 
   let view;
   switch (route) {
@@ -30,11 +38,12 @@ export function App() {
     case 'impact': view = <ImpactView />; break;
     case 'guide': view = <GuideView term={params.term} />; break;
     case 'sources': view = <DataSourcesView />; break;
-    default: view = <p>Página no disponible. <a href={hashFor('/', scenario)}>Ir al inicio</a></p>;
+    default: view = <p>{t().common.notFound} <a href={hashFor('/', scenario)}>{t().common.goHome}</a></p>;
   }
 
   return (
-    <div className="layout">
+    // Al cambiar de idioma se vuelve a dibujar todo con los textos y formatos del idioma elegido
+    <div className="layout" key={lang}>
       <Sidebar route={route} scenario={scenario} itemId={params.itemId} />
       <div className="main-col">
         <Topbar />

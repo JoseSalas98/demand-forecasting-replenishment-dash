@@ -1,5 +1,6 @@
 // Carga de los JSON exportados (solo public/data; constitución I.7).
 import { useEffect, useState } from 'react';
+import { t } from './i18n';
 
 const cache = new Map<string, Promise<unknown>>();
 
@@ -8,7 +9,7 @@ export function loadJson<T>(path: string): Promise<T> {
   if (!cache.has(path)) {
     const url = `${import.meta.env.BASE_URL}data/${path}`;
     const p = fetch(url).then((res) => {
-      if (!res.ok) throw new Error(`No se pudo leer ${path} (${res.status})`);
+      if (!res.ok) throw new Error(t().common.loadFail(path, res.status));
       return res.json();
     });
     p.catch(() => cache.delete(path));
