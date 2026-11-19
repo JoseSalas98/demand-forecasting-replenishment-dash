@@ -1,8 +1,9 @@
 // Grupos del catálogo como burbujas agrupadas por familia (spec 002, FR-020/021).
 // Radio ∝ √valor; Vitales a la izquierda, Útiles arriba a la derecha, Complementarios abajo.
 import { useMemo, type CSSProperties } from 'react';
-import { fmtM, fmtNumber } from '../../format';
-import { cellDefinition, cellName, cellSingular, FAMILIES, FAMILY_DEF, FAMILY_NAME, LEVEL_NAME, LEVELS, type Family } from '../../naming';
+import { fmtAxisM, fmtM, fmtNumber } from '../../format';
+import { t } from '../../i18n';
+import { cellDefinition, cellName, cellSingular, FAMILIES, familyDef, familyName, levelName, LEVELS, type Family, type Level } from '../../naming';
 import { LEVEL_COLOR } from '../../theme';
 import type { MatrixCell } from '../../types';
 import { ChartTip, useChartTip } from './ChartTip';
@@ -64,6 +65,7 @@ export function bubbleLayout(matrix: MatrixCell[], mode: SizeMode): Placed[] {
   });
 }
 
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const move = (x: number, y: number): CSSProperties => ({ transform: `translate(${x}px, ${y}px)` });
 
 export function Bubbles({ matrix, selected, onSelect, mode }: { matrix: MatrixCell[]; selected: string; onSelect: (cell: string) => void; mode: SizeMode }) {
@@ -74,26 +76,26 @@ export function Bubbles({ matrix, selected, onSelect, mode }: { matrix: MatrixCe
 
   return (
     <div className="bubbles" ref={box} onMouseLeave={hide}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label="Grupos del catálogo">
+      <svg viewBox={`0 0 ${W} ${H}`} role="group" aria-label={t().bubbles.aria}>
         {placed.map((p, fi) => {
-          const t = famTotal(p.family);
+          const tot = famTotal(p.family);
           return (
             <g key={p.family}>
-              <g className="halo-g" style={move(p.cx, p.cy)} onMouseMove={(e) => show(e, <><strong>{FAMILY_NAME[p.family]}</strong><span>{FAMILY_DEF[p.family]}</span><span className="tip-foot">{fmtNumber(t.n)} artículos · {fmtM(t.s)} de venta</span></>)}>
+              <g className="halo-g" style={move(p.cx, p.cy)} onMouseMove={(e) => show(e, <><strong>{familyName(p.family)}</strong><span>{familyDef(p.family)}</span><span className="tip-foot">{t().bubbles.famFoot(fmtNumber(tot.n), fmtM(tot.s))}</span></>)}>
                 <g className="float" style={{ animationName: 'float-c', animationDuration: `${11 + fi * 2}s` }}>
                   <circle className="halo" cx={0} cy={0} r={p.R} style={{ r: `${p.R}px` } as CSSProperties} />
                 </g>
               </g>
               <g className="fam-label" style={move(p.cx, p.cy + p.R + 24)}>
-                <text className="fam-name" textAnchor="middle">{FAMILY_NAME[p.family]}</text>
-                <text className="fam-sub" y={20} textAnchor="middle">{fmtNumber(t.n)} artículos · {fmtM(t.s)}</text>
-                {p.family === 'A' && <text className="fam-tag" y={39} textAnchor="middle">CON PRONÓSTICO</text>}
+                <text className="fam-name" textAnchor="middle">{familyName(p.family)}</text>
+                <text className="fam-sub" y={20} textAnchor="middle">{t().bubbles.famSub(fmtNumber(tot.n), fmtM(tot.s))}</text>
+                {p.family === 'A' && <text className="fam-tag" y={39} textAnchor="middle">{t().bubbles.tag}</text>}
               </g>
               {p.cells.map((c, j) => {
                 const m = byCell.get(c.cell);
                 const fs = Math.max(11, Math.min(16, c.r / 3.8));
                 const small = c.r < 34;
-                const label = mode === 'spend' ? `${fmtNumber((m?.spend ?? 0) / 1e6, 1)} M` : fmtNumber(m?.n_items ?? 0);
+                const label = mode === 'spend' ? fmtAxisM(m?.spend ?? 0, 1) : fmtNumber(m?.n_items ?? 0);
                 const pick = () => onSelect(c.cell);
                 return (
                   <g
@@ -103,7 +105,7 @@ export function Bubbles({ matrix, selected, onSelect, mode }: { matrix: MatrixCe
                     tabIndex={0}
                     role="button"
                     aria-pressed={selected === c.cell}
-                    aria-label={`${cellName(c.cell)}: ${fmtNumber(m?.n_items ?? 0)} artículos`}
+                    aria-label={t().bubbles.cellAria(cellName(c.cell), fmtNumber(m?.n_items ?? 0))}
                     onClick={pick}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -113,13 +115,13 @@ export function Bubbles({ matrix, selected, onSelect, mode }: { matrix: MatrixCe
                     }}
                     onMouseMove={(e) => {
                       e.stopPropagation();
-                      show(e, <><strong>{cellSingular(c.cell).replace(/^a/, 'A')}</strong><span>{cellDefinition(c.cell)}</span><span className="tip-foot">{fmtNumber(m?.n_items ?? 0)} artículos · {fmtM(m?.spend ?? 0)} de venta · clic para ver su perfil</span></>);
+                      show(e, <><strong>{cap(cellSingular(c.cell))}</strong><span>{cellDefinition(c.cell)}</span><span className="tip-foot">{t().bubbles.cellFoot(fmtNumber(m?.n_items ?? 0), fmtM(m?.spend ?? 0))}</span></>);
                     }}
                   >
                     <g className="float" style={{ animationName: ['float-a', 'float-b', 'float-c'][(fi + j) % 3], animationDuration: `${(6.5 + ((fi * 3 + j) * 1.7) % 4.5).toFixed(1)}s`, animationDelay: `${-((fi * 5 + j * 3) % 7)}s` }}>
                       <g className="lift">
                         <circle className="ball" cx={0} cy={0} r={c.r} fill={LEVEL_COLOR[c.cell[1]]} stroke={LEVEL_COLOR[c.cell[1]]} style={{ r: `${c.r}px` } as CSSProperties} />
-                        {!small && <text className="bub-name" y={-fs * 0.2} textAnchor="middle" style={{ fontSize: fs }}>{LEVEL_NAME[c.cell[1] as 'X']}</text>}
+                        {!small && <text className="bub-name" y={-fs * 0.2} textAnchor="middle" style={{ fontSize: fs }}>{levelName(c.cell[1] as Level)}</text>}
                         <text className="bub-val" y={small ? fs * 0.4 : fs * 1.1} textAnchor="middle" style={{ fontSize: fs * 1.2 }}>{label}</text>
                       </g>
                     </g>

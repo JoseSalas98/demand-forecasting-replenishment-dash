@@ -1,18 +1,15 @@
 // Radar de un grupo frente a los tres grupos Vitales y el artículo típico (1×). Sin marcadores fijos:
 // al pasar el cursor por un eje se resalta y un recuadro muestra el valor real de cada grupo (FR-023).
 import { useState } from 'react';
+import { fmtNumber, na } from '../../format';
+import { t } from '../../i18n';
 import { cellName } from '../../naming';
 import { COLOR, LEVEL_COLOR } from '../../theme';
 import type { Segmentation } from '../../types';
 import { ChartTip, TipRow, useChartTip } from './ChartTip';
 
-export const AXIS_LABEL: Record<string, string> = {
-  spend: 'Venta',
-  usage_units: 'Unidades',
-  cv: 'Variabilidad',
-  zero_share: 'Días sin venta',
-  velocity: 'Unidades por día',
-};
+/** Nombre corto de cada eje del radar en el idioma activo. */
+export const axisLabel = (axis: string): string => t().radar.axes[axis] ?? axis;
 
 const W = 480, H = 330, CX = W / 2, CY = H / 2 + 4, R = 118, MAX = 5;
 const VITALS = ['AX', 'AY', 'AZ'];
@@ -45,7 +42,7 @@ export function GroupRadar({ data, selected, visible, formatRaw }: {
 
   return (
     <div className="radar" ref={box} onMouseLeave={() => { hide(); setAxisHover(null); }}>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Radar de ${cellName(selected)} frente a los grupos Vitales`}>
+      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={t().radar.aria(cellName(selected))}>
         {[1, 2, 3, 4, 5].map((k) => <polygon key={k} points={ring(k)} fill="none" stroke={COLOR.border} />)}
         {axes.map((a, i) => {
           const [x, y] = pt(i, MAX);
@@ -53,7 +50,7 @@ export function GroupRadar({ data, selected, visible, formatRaw }: {
           return (
             <g key={a}>
               <line x1={CX} y1={CY} x2={x} y2={y} stroke={axisHover === i ? COLOR.text : COLOR.border} strokeOpacity={axisHover === i ? 0.6 : 1} />
-              <text x={lx} y={ly + 4} className="axis-label" textAnchor={Math.abs(lx - CX) < 12 ? 'middle' : lx < CX ? 'end' : 'start'}>{AXIS_LABEL[a] ?? a}</text>
+              <text x={lx} y={ly + 4} className="axis-label" textAnchor={Math.abs(lx - CX) < 12 ? 'middle' : lx < CX ? 'end' : 'start'}>{axisLabel(a)}</text>
             </g>
           );
         })}
@@ -77,12 +74,12 @@ export function GroupRadar({ data, selected, visible, formatRaw }: {
                 setAxisHover(i);
                 show(e, (
                   <>
-                    <strong>{AXIS_LABEL[a] ?? a}</strong>
+                    <strong>{axisLabel(a)}</strong>
                     {series.map((v) => {
                       const c = data.radar.cells[v]?.[a];
-                      return <TipRow key={v} color={v === selected ? groupColor(v) : LEVEL_COLOR[v[1]]} label={cellName(v)} value={c ? `${formatRaw(a, c.median_raw)} · ${c.median_norm.toFixed(1).replace('.', ',')}×` : 'no disponible'} />;
+                      return <TipRow key={v} color={v === selected ? groupColor(v) : LEVEL_COLOR[v[1]]} label={cellName(v)} value={c ? `${formatRaw(a, c.median_raw)} · ${fmtNumber(c.median_norm, 1)}×` : na()} />;
                     })}
-                    <span className="tip-foot">Artículo típico del catálogo: {formatRaw(a, data.radar.global_median[a])} (1×)</span>
+                    <span className="tip-foot">{t().radar.typicalFoot(formatRaw(a, data.radar.global_median[a]))}</span>
                   </>
                 ));
               }}

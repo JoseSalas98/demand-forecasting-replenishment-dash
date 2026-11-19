@@ -176,10 +176,10 @@ th { font-weight: 600; color: var(--text-muted); background: transparent; cursor
 /* Texto oscuro sobre el relleno: el color de la serie queda en la forma, no en el texto */
 
 /* Selector de artículo */
-.combo { position: relative; width: 300px; max-width: 100%; }
+.combo { position: relative; width: 340px; max-width: 100%; }
 .combo input {
   width: 100%;
-  padding: 10px 14px;
+  padding: 10px 42px 10px 40px;
   font-size: 15px;
   background: var(--card);
   border: 1px solid var(--border);
@@ -187,8 +187,20 @@ th { font-weight: 600; color: var(--text-muted); background: transparent; cursor
   color: var(--text);
   font-family: inherit;
 }
+.combo input { border-color: var(--slate); cursor: text; }
 .combo input::placeholder { color: var(--text-muted); }
-.combo input:focus { outline: none; border-color: var(--cyan); }
+.combo input:hover { border-color: var(--cyan); }
+.combo input:focus { outline: none; border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0, 159, 202, 0.25); }
+.combo-ico { position: absolute; left: 13px; top: 50%; width: 18px; height: 18px; transform: translateY(-50%); fill: none; stroke: var(--cyan); stroke-width: 2.2; stroke-linecap: round; pointer-events: none; }
+.combo-toggle { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-left: 1px solid var(--border); border-radius: 0 8px 8px 0; background: transparent; color: var(--text); cursor: pointer; padding: 0; }
+.combo-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.15s; }
+.combo.open .combo-toggle svg { transform: rotate(180deg); }
+.combo-toggle:hover { color: var(--cyan); }
+.combo.combo-lg { width: 560px; }
+.combo.combo-lg input { padding: 16px 54px 16px 52px; font-size: 18px; border-width: 2px; border-color: var(--cyan); border-radius: 12px; }
+.combo.combo-lg .combo-ico { left: 18px; width: 22px; height: 22px; }
+.combo.combo-lg .combo-toggle { width: 42px; height: 42px; right: 8px; }
+.combo.combo-lg ul { text-align: left; }
 .combo ul {
   position: absolute;
   z-index: 20;
@@ -442,3 +454,24 @@ ul.steps li::marker { color: var(--cyan); }
 .table-wrap.scroll { max-height: 560px; overflow-y: auto; }
 .table-wrap.scroll thead th { position: sticky; top: 0; background: var(--card); z-index: 1; }
 td .btn.small { padding: 3px 8px; }
+
+/* Idioma (spec 003) */
+.lang-toggle { display: inline-flex; border: 1px solid var(--slate); border-radius: 999px; overflow: hidden; background: var(--card); }
+.lang-btn { border: 0; background: transparent; color: var(--text-muted); font: inherit; font-size: 12.5px; font-weight: 700; letter-spacing: 0.06em; padding: 4px 11px; cursor: pointer; }
+.lang-btn + .lang-btn { border-left: 1px solid var(--border); }
+.lang-btn:hover { color: var(--text); }
+.lang-btn.active { background: var(--cyan); color: var(--bg); }
+.lang-btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
+.lang-toggle.big .lang-btn { font-size: 15px; letter-spacing: 0; padding: 8px 18px; font-weight: 600; }
+.home-lang { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 10px; }
+.topbar { align-items: center; }
+
+/* Artículo sin elegir: buscador destacado (spec 003) */
+.pick-item { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px; padding: 56px 24px 64px; }
+.pick-item .pick-ico { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--panel); border: 1px solid var(--border); color: var(--cyan); font-size: 26px; }
+.pick-item h2 { margin: 0; font-size: 26px; }
+.pick-item p { margin: 0; max-width: 62ch; color: var(--text-muted); }
+.pick-item .pick-hint { display: inline-flex; align-items: center; gap: 8px; color: var(--cyan); font-size: 14px; font-weight: 600; }
+.pick-item .pick-hint::before { content: '↓'; font-size: 16px; animation: nudge 1.6s ease-in-out infinite; }
+@keyframes nudge { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) { .pick-item .pick-hint::before { animation: none; } }

@@ -1,18 +1,21 @@
-// Selector de artículo con escritura y despliegue (patrón combobox de WAI-ARIA).
+// Selector de artículo con escritura y despliegue (patrón combobox de WAI-ARIA). La lupa y la flecha
+// dejan ver que es un buscador y una lista (spec 003); `big` es la versión destacada del estado vacío.
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { fmtNumber } from '../format';
+import { t } from '../i18n';
 import { cellName } from '../naming';
 import { hashFor } from '../router';
 import type { CatalogItem, Scenario } from '../types';
 
 const MAX_SHOWN = 400; // la lista completa se pinta por tramos para no crear 3.049 nodos de golpe
 
-export function ItemCombobox({ items, forecastOnly, scenario }: { items: CatalogItem[]; forecastOnly: boolean; scenario: Scenario }) {
+export function ItemCombobox({ items, forecastOnly, scenario, big = false, autoFocus = false }: { items: CatalogItem[]; forecastOnly: boolean; scenario: Scenario; big?: boolean; autoFocus?: boolean }) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const listId = useId();
   const wrap = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
 
   const pool = useMemo(() => (forecastOnly ? items.filter((i) => i.forecasted) : items), [items, forecastOnly]);
   const matches = useMemo(() => {
@@ -52,15 +55,18 @@ export function ItemCombobox({ items, forecastOnly, scenario }: { items: Catalog
   };
 
   return (
-    <div className="combo" ref={wrap}>
+    <div className={`combo${big ? ' combo-lg' : ''}${open ? ' open' : ''}`} ref={wrap}>
+      <svg className="combo-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
       <input
+        ref={input}
+        autoFocus={autoFocus}
         role="combobox"
         aria-expanded={open}
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={open && shown[active] ? `${listId}-${active}` : undefined}
-        aria-label="Buscar artículo"
-        placeholder="Buscar artículo…"
+        aria-label={t().combo.label}
+        placeholder={big ? t().combo.placeholder : t().combo.placeholderShort}
         value={q}
         onChange={(e) => {
           setQ(e.target.value);
@@ -70,13 +76,26 @@ export function ItemCombobox({ items, forecastOnly, scenario }: { items: Catalog
         onClick={() => setOpen(true)}
         onKeyDown={onKey}
       />
+      <button
+        type="button"
+        className="combo-toggle"
+        tabIndex={-1}
+        aria-label={t().combo.open}
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => {
+          setOpen(!open);
+          input.current?.focus();
+        }}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
       {open && (
         <ul id={listId} role="listbox">
           <li className="count" role="presentation">
-            {fmtNumber(matches.length)} de {fmtNumber(pool.length)} {forecastOnly ? 'con pronóstico' : 'del catálogo'}
-            {matches.length > MAX_SHOWN ? ` · se muestran ${fmtNumber(MAX_SHOWN)}; escribe para filtrar` : ''}
+            {t().combo.count(fmtNumber(matches.length), fmtNumber(pool.length), forecastOnly)}
+            {matches.length > MAX_SHOWN ? t().combo.capped(fmtNumber(MAX_SHOWN)) : ''}
           </li>
-          {shown.length === 0 && <li className="count" role="presentation">“{q.trim()}” no coincide con ningún artículo.</li>}
+          {shown.length === 0 && <li className="count" role="presentation">{t().combo.noMatch(q.trim())}</li>}
           {shown.map((i, k) => (
             <li
               key={i.item_id}
@@ -88,7 +107,7 @@ export function ItemCombobox({ items, forecastOnly, scenario }: { items: Catalog
               onClick={() => go(i.item_id)}
             >
               <span>{i.item_id}</span>
-              <span className="hint">{i.forecasted ? `${cellName(i.cell)} · con pronóstico` : cellName(i.cell)}</span>
+              <span className="hint">{i.forecasted ? `${cellName(i.cell)} · ${t().combo.withForecast}` : cellName(i.cell)}</span>
             </li>
           ))}
         </ul>

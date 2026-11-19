@@ -1,4 +1,5 @@
 import { fmtMoney } from '../format';
+import { t } from '../i18n';
 
 /**
  * Ahorro frente a la línea base (columnas impact* de las salidas: costo de la línea base − costo
@@ -10,9 +11,9 @@ export function Saving({ value, sentence = true }: { value: number | null | unde
   if (!sentence) return <span className={worse ? 'negative' : 'positive'}>{worse ? '− ' : ''}{fmtMoney(Math.abs(value))}</span>;
   return (
     <span className={worse ? 'negative' : 'positive'}>
-      {worse ? 'el pronóstico cuesta ' : 'el pronóstico ahorra '}
+      {worse ? t().saving.costs : t().saving.saves}
       {fmtMoney(Math.abs(value))}
-      {worse ? ' más que la línea base' : ' frente a la línea base'}
+      {worse ? t().saving.moreThan : t().saving.vsBaseline}
     </span>
   );
 }

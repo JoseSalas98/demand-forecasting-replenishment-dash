@@ -2,20 +2,21 @@
 // venta en dinero y tabla por periodo exportable.
 import { MoneyChart } from '../components/charts/MoneyChart';
 import { UnitsHistogram } from '../components/charts/UnitsHistogram';
-import { fmtDate } from '../components/charts/ArticleChart';
 import { ImpactContext } from '../components/ImpactContext';
 import { ModuleHeader } from '../components/ModuleHeader';
 import { LoadError, Loading } from '../components/StateViews';
 import { useData } from '../data';
-import { fmtNumber, fmtPct, NOT_AVAILABLE } from '../format';
+import { fmtDate, fmtNumber, fmtPct, fmtUsd, na } from '../format';
+import { t } from '../i18n';
 import { wape } from '../impactMath';
 import { cellName } from '../naming';
 import { hashFor } from '../router';
 import type { Descriptive, Items, ItemSeries, Segments } from '../types';
 import { useStartDates } from './ItemView';
 
-const usd = (v: number | null | undefined) => (v === null || v === undefined || !Number.isFinite(v) ? NOT_AVAILABLE : `${fmtNumber(v)} US$`);
+const usd = fmtUsd;
 const pct = (v: number | null) => fmtPct(v === null ? null : v * 100);
+const units = (v: number | null | undefined) => (v === null || v === undefined ? na() : t().common.units(fmtNumber(v)));
 
 /** Descarga un CSV en el navegador (sitio estático; research R5). */
 function downloadCsv(name: string, text: string) {
@@ -34,19 +35,20 @@ export function ItemDetailView({ itemId }: { itemId: string }) {
   const series = useData<ItemSeries>(item ? `series/${item.item_id}.json` : null);
   const descriptive = useData<Descriptive>(item ? `descriptive/${item.item_id}.json` : null);
   const startDates = useStartDates();
+  const s = t().itemDetail;
 
-  const back = <p><a className="btn small" href={hashFor(`/articulo/${itemId}`, 'A')}><span aria-hidden="true">←</span> Volver al artículo</a></p>;
+  const back = <p><a className="btn small" href={hashFor(`/articulo/${itemId}`, 'A')}><span aria-hidden="true">←</span> {s.back}</a></p>;
   if (items.status === 'error') return <LoadError error={items.error} />;
   if (items.status !== 'ready') return <Loading />;
   if (!item) {
     return (
       <>
         {back}
-        <div className="note">“{itemId}” no entró al pronóstico: no tiene cálculo de ahorro ni error (solo los 517 artículos con pronóstico).</div>
+        <div className="note">{s.notForecast(itemId)}</div>
       </>
     );
   }
-  for (const s of [series, descriptive]) if (s.status === 'error') return <LoadError error={s.error} />;
+  for (const st of [series, descriptive]) if (st.status === 'error') return <LoadError error={st.error} />;
   if (series.status !== 'ready' || descriptive.status !== 'ready') return <Loading />;
 
   const imp = item.impact.A;
@@ -63,73 +65,69 @@ export function ItemDetailView({ itemId }: { itemId: string }) {
   const st = descriptive.data.stats;
 
   const csv = () => {
-    const head = 'inicio_periodo,periodo,vendido,sin_faltantes,pronostico,linea_base';
+    const head = s.csvHeader;
     const lines = test.map((r) => [startDates.get(r.block) ?? '', r.block, r.units_observed ?? '', r.units_completed ?? '', r.forecast?.A ?? '', r.baseline ?? ''].join(','));
-    downloadCsv(`${item.item_id}_ano_de_prueba.csv`, [head, ...lines].join('\n'));
+    downloadCsv(s.csvName(item.item_id), [head, ...lines].join('\n'));
   };
 
   return (
     <>
       {back}
-      <ModuleHeader title={<>Detalle del pronóstico · <span className="mono">{item.item_id}</span></>} subtitle={`${cellName(item.cell)} · año de prueba: periodos ${from}–${to}`} />
+      <ModuleHeader title={<>{s.title} · <span className="mono">{item.item_id}</span></>} subtitle={s.subtitle(cellName(item.cell), String(from), String(to))} />
 
       <div className="card">
-        <h2>Cómo se calcula el ahorro</h2>
+        <h2>{s.calcTitle}</h2>
         <div className="table-wrap">
           <table>
-            <thead><tr><th className="left">Concepto · año de prueba ({test.length} periodos)</th><th>Línea base</th><th>Pronóstico</th><th>Diferencia (ahorro)</th></tr></thead>
+            <thead><tr><th className="left">{s.colConcept(String(test.length))}</th><th>{s.colBaseline}</th><th>{s.colForecast}</th><th>{s.colDiff}</th></tr></thead>
             <tbody>
-              <tr><td className="left">Unidades pronosticadas en el año</td><td>{fmtNumber(sum(base))} u.</td><td>{fmtNumber(sum(fc))} u.</td><td>real sin faltantes: {fmtNumber(sum(real))} u.</td></tr>
-              <tr><td className="left">Error medio por periodo (WAPE)</td><td>{pct(baseWape)} *</td><td>{pct(met.wape_units)}</td><td className="good">{baseWape !== null && met.wape_units !== null ? `${fmtNumber((baseWape - met.wape_units) * 100, 1)} puntos menos` : NOT_AVAILABLE}</td></tr>
-              <tr><td className="left">Colchón para atender el 95 % (z)</td><td>{fmtNumber(imp.z_naive, 2)}</td><td>{fmtNumber(imp.z_model, 2)}</td><td></td></tr>
-              <tr><td className="left">Mercancía sobrante</td><td>{usd(imp.excess_naive)}</td><td>{usd(imp.excess_model)}</td><td className={imp.impact_excess < 0 ? 'neg' : 'good'}>{diff(imp.excess_naive, imp.excess_model)}</td></tr>
-              <tr><td className="left">Ventas perdidas por falta de producto</td><td>{usd(imp.lost_naive)}</td><td>{usd(imp.lost_model)}</td><td className={imp.impact_lost < 0 ? 'neg' : 'good'}>{diff(imp.lost_naive, imp.lost_model)}</td></tr>
-              <tr className="strong-row"><td className="left">Costo total de equivocarse</td><td>{usd(costN)}</td><td>{usd(costM)}</td><td className={imp.impact < 0 ? 'neg' : 'good'}>{diff(costN, costM)}</td></tr>
-              <tr><td className="left">Como % de la demanda del año ({usd(imp.demand)})</td><td>{fmtPct((costN / imp.demand) * 100)}</td><td>{fmtPct((costM / imp.demand) * 100)}</td><td className={imp.impact < 0 ? 'neg' : 'good'}>{fmtPct(imp.impact_pct_demand)}</td></tr>
+              <tr><td className="left">{s.rowUnits}</td><td>{units(sum(base))}</td><td>{units(sum(fc))}</td><td>{s.realUnits(units(sum(real)))}</td></tr>
+              <tr><td className="left">{s.rowWape}</td><td>{pct(baseWape)} *</td><td>{pct(met.wape_units)}</td><td className="good">{baseWape !== null && met.wape_units !== null ? s.pointsLess(fmtNumber((baseWape - met.wape_units) * 100, 1)) : na()}</td></tr>
+              <tr><td className="left">{s.rowZ}</td><td>{fmtNumber(imp.z_naive, 2)}</td><td>{fmtNumber(imp.z_model, 2)}</td><td></td></tr>
+              <tr><td className="left">{s.rowExcess}</td><td>{usd(imp.excess_naive)}</td><td>{usd(imp.excess_model)}</td><td className={imp.impact_excess < 0 ? 'neg' : 'good'}>{diff(imp.excess_naive, imp.excess_model)}</td></tr>
+              <tr><td className="left">{s.rowLost}</td><td>{usd(imp.lost_naive)}</td><td>{usd(imp.lost_model)}</td><td className={imp.impact_lost < 0 ? 'neg' : 'good'}>{diff(imp.lost_naive, imp.lost_model)}</td></tr>
+              <tr className="strong-row"><td className="left">{s.rowTotal}</td><td>{usd(costN)}</td><td>{usd(costM)}</td><td className={imp.impact < 0 ? 'neg' : 'good'}>{diff(costN, costM)}</td></tr>
+              <tr><td className="left">{s.rowPct(usd(imp.demand))}</td><td>{fmtPct((costN / imp.demand) * 100)}</td><td>{fmtPct((costM / imp.demand) * 100)}</td><td className={imp.impact < 0 ? 'neg' : 'good'}>{fmtPct(imp.impact_pct_demand)}</td></tr>
             </tbody>
           </table>
         </div>
-        <p className="small muted">
-          Para atender el 95 % de la demanda total, a cada pedido se le suma un colchón de z × el error típico. Los totales de unidades del año
-          pueden casi coincidir; el ahorro sale de que la línea base se equivoca más de un periodo a otro, necesita más colchón y ese colchón
-          termina como sobrante. * WAPE de la línea base: calculado en el sitio a partir de la serie exportada (lectura derivada).
-        </p>
+        <p className="small muted">{s.calcNote}</p>
         {segs.status === 'ready' && <ImpactContext impact={imp} concentration={segs.data.concentration.A} />}
       </div>
 
       <div className="card section">
-        <h2>Error del pronóstico</h2>
+        <h2>{s.errorTitle}</h2>
         <div className="kpis three">
-          <div className="kpi"><span className="lbl">Error del pronóstico (WAPE)</span><span className="v">{pct(met.wape_units)}</span><span className="l">error absoluto ÷ venta sin faltantes; línea base: {pct(baseWape)}</span></div>
-          <div className="kpi"><span className="lbl">Error medio por periodo (MAE)</span><span className="v">{fmtNumber(met.mae_units)} u.</span><span className="l">unidades por periodo de 4 semanas</span></div>
-          <div className="kpi"><span className="lbl">Error comparable (RMSSE)</span><span className="v">{fmtNumber(met.rmsse_units, 3)}</span><span className="l">escalado por la variación típica de la serie (criterio M5)</span></div>
-          <div className="kpi"><span className="lbl">Variabilidad de la venta (CV de train)</span><span className="v">{fmtPct(item.cv_train)}</span><span className="l">sin días de faltante; define su grupo</span></div>
-          <div className="kpi"><span className="lbl">Variabilidad histórica (descriptiva)</span><span className="v">{fmtPct(st.cv_pct)}</span><span className="l">desde el lanzamiento · media {fmtNumber(st.mean)} u., σ {fmtNumber(st.sigma)} u.</span></div>
-          <div className="kpi"><span className="lbl">Marcado para revisión</span><span className="v">{met.review ? 'Sí' : 'No'}</span><span className="l">{met.review ? 'error fuera de lo normal en el año de prueba' : 'el proyecto no lo marcó'}</span></div>
+          <div className="kpi"><span className="lbl">{s.kWape}</span><span className="v">{pct(met.wape_units)}</span><span className="l">{s.kWapeNote(pct(baseWape))}</span></div>
+          <div className="kpi"><span className="lbl">{s.kMae}</span><span className="v">{units(met.mae_units)}</span><span className="l">{s.kMaeNote}</span></div>
+          <div className="kpi"><span className="lbl">{s.kRmsse}</span><span className="v">{fmtNumber(met.rmsse_units, 3)}</span><span className="l">{s.kRmsseNote}</span></div>
+          <div className="kpi"><span className="lbl">{s.kCv}</span><span className="v">{fmtPct(item.cv_train)}</span><span className="l">{s.kCvNote}</span></div>
+          <div className="kpi"><span className="lbl">{s.kCvHist}</span><span className="v">{fmtPct(st.cv_pct)}</span><span className="l">{s.kCvHistNote(fmtNumber(st.mean), fmtNumber(st.sigma))}</span></div>
+          <div className="kpi"><span className="lbl">{s.kReview}</span><span className="v">{met.review ? s.yes : s.no}</span><span className="l">{met.review ? s.kReviewYes : s.kReviewNo}</span></div>
         </div>
       </div>
 
       <div className="grid-2 section">
         <div className="card">
-          <h2>Distribución de unidades por periodo</h2>
+          <h2>{s.histTitle}</h2>
           <UnitsHistogram bins={descriptive.data.histogram} />
-          <p className="small muted">{fmtNumber(st.n_blocks)} periodos desde el lanzamiento, en 8 rangos de igual ancho.</p>
+          <p className="small muted">{s.histNote(fmtNumber(st.n_blocks))}</p>
         </div>
         <div className="card">
-          <h2>Venta en dinero por periodo</h2>
+          <h2>{s.moneyTitle}</h2>
           <MoneyChart rows={descriptive.data.rows} />
-          <p className="small muted">A precio de venta, por periodo de 4 semanas.</p>
+          <p className="small muted">{s.moneyNote}</p>
         </div>
       </div>
 
       <div className="card section">
         <div className="card-head">
-          <h2>Pronóstico por periodo · año de prueba</h2>
-          <button type="button" className="btn primary small" onClick={csv}>Exportar CSV <span aria-hidden="true">⤓</span></button>
+          <h2>{s.tableTitle}</h2>
+          <button type="button" className="btn primary small" onClick={csv}>{s.exportCsv} <span aria-hidden="true">⤓</span></button>
         </div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th className="left">Inicio del periodo</th><th>Se vendió</th><th>Sin faltantes</th><th>Pronóstico</th><th>Línea base</th><th>Pronóstico − real</th></tr></thead>
+            <thead><tr><th className="left">{s.colStart}</th><th>{s.colSold}</th><th>{s.colCompleted}</th><th>{s.colForecast}</th><th>{s.colBaseline}</th><th>{s.colDelta}</th></tr></thead>
             <tbody>
               {test.map((r) => {
                 const f = r.forecast ? r.forecast.A : null;
@@ -148,7 +146,7 @@ export function ItemDetailView({ itemId }: { itemId: string }) {
             </tbody>
           </table>
         </div>
-        <p className="small"><a className="btn small" href={hashFor(`/articulo/${item.item_id}/playground`, 'A')}>Reproducir el año de prueba periodo a periodo <span aria-hidden="true">→</span></a></p>
+        <p className="small"><a className="btn small" href={hashFor(`/articulo/${item.item_id}/playground`, 'A')}>{s.playground} <span aria-hidden="true">→</span></a></p>
       </div>
     </>
   );

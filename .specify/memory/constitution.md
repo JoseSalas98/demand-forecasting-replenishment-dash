@@ -1,11 +1,13 @@
 <!--
 Sync Impact Report
-- Versión: 1.1.2 → 2.0.0 (MAJOR: se redefine el principio I al permitir lecturas derivadas en el sitio).
-- Principios modificados: I (nuevo I.12 · lecturas derivadas en el sitio); II.4 (etiqueta de dinero
-  única y global); II.6 (% de demanda atendida continuo mediante I.12); Reglas de método 4 (excepción I.12).
+- Versión: 2.0.0 → 2.1.0 (MINOR: se agrega el principio VI.4, interfaz bilingüe).
+- Principios modificados: II.4 (la etiqueta de dinero se fija en español y en inglés); VI (nuevo VI.4 ·
+  idiomas de la interfaz).
 - Secciones agregadas: ninguna. Secciones eliminadas: ninguna.
-- Motivo: feature 002 (rediseño para gerencia a partir del mockup aprobado por el usuario el 2026-11-18).
-- Plantillas: sin cambios requeridos (la puerta "Constitution Check" del plan sigue igual).
+- Motivo: feature 003 (versión en inglés con selector de idioma, aprobada por el usuario el 2026-11-19).
+- Plantillas: sin cambios requeridos.
+- Historial: 1.1.2 → 2.0.0 (feature 002): I.12 lecturas derivadas, II.4 etiqueta de dinero global,
+  II.6 servicio continuo, excepción I.12 en las reglas de método.
 -->
 # Constitución — Frontend de resultados del pronóstico de reposición
 
@@ -87,7 +89,8 @@ verdad que la gerencia no puede distinguir de la oficial.
    una misma cifra.
 4. **Dinero.** Todo valor monetario está a precio de venta y no es margen. Lo indica una etiqueta
    única y siempre visible en la barra superior de todas las pantallas (“Cifras a precio de venta ·
-   no es margen”); no se repite debajo de cada cifra.
+   no es margen”; en inglés, “Figures at retail price · not margin”); no se repite debajo de cada
+   cifra.
 5. **Versiones de la venta.** La venta observada y la venta completada por quiebres de stock son
    distintas: MUST rotularse siempre y MUST NOT sumarse.
 6. **Colchón.** El z por artículo es fijo, el mismo que usaron las salidas de impacto
@@ -148,8 +151,17 @@ decisiones de reposición equivocadas.
    dato ni como valor esperado.
 2. Ante un conflicto de diseño (colores, disposición, interacción), manda la guía.
 3. Ante un conflicto de alcance o de datos, manda la especificación.
+4. **Idiomas.** La interfaz MUST estar completa en español (por defecto) y en inglés, con la misma
+   estructura, las mismas cifras y el mismo criterio de lenguaje sencillo para gerencia. Un botón
+   ES | EN en Inicio y en la barra superior cambia el idioma; el sitio lo recuerda en el navegador y
+   un enlace con `?lang=en` abre en inglés. Cada texto vive en los dos diccionarios
+   (`src/i18n/es.ts`, `src/i18n/en.ts`) y MUST NOT escribirse directo en una vista. En inglés, los
+   números y fechas siguen el estilo de EE. UU. (US$3.28M, 52%, May 25, 2015). Los detalles técnicos
+   que escribe el exportador (verificaciones de “Origen de los datos”) se muestran tal como vienen.
+   La documentación y los comentarios siguen en español (V.1).
 
-*Razón:* separa quién decide cómo se ve (la guía) de qué se muestra (la especificación).
+*Razón:* separa quién decide cómo se ve (la guía) de qué se muestra (la especificación); el
+segundo idioma amplía el público sin crear una segunda versión que mantener aparte.
 
 ## Stack y rutas de trabajo
 
@@ -206,4 +218,4 @@ decisiones de reposición equivocadas.
 - Los TODO marcados aquí se resuelven contra las salidas del proyecto de ciencia de datos, nunca
   por suposición.
 
-**Version**: 2.0.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-18
+**Version**: 2.1.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-19

@@ -48,7 +48,8 @@ El mismo concepto lleva el mismo color en todas las gráficas:
 ## 4. Estructura
 
 - **Panel lateral fijo** a la izquierda: marca "DDR", "Reposición guiada por la demanda" y módulos con ícono de línea (Inicio, Segmentos, Artículo, Impacto, Cómo usar). El módulo activo va con fondo de tarjeta e ícono cian. "Origen de los datos" queda al pie.
-- **Barra superior** con una sola etiqueta siempre visible: "Cifras a precio de venta · no es margen". No se repite bajo cada cifra.
+- **Barra superior** con una sola etiqueta siempre visible: "Cifras a precio de venta · no es margen" ("Figures at retail price · not margin" en inglés). No se repite bajo cada cifra. A su derecha, el botón de idioma **ES | EN** (el activo en cian).
+- **Idiomas:** todo el tablero existe en español (por defecto) y en inglés, con la misma estructura y el mismo lenguaje sencillo. En inglés, números y fechas en estilo de EE. UU. (US$3.28M, 52%, May 25, 2015). Sin banderas: los idiomas se nombran con su propio nombre (Español, English).
 - **Encabezado** de cada módulo: título a la izquierda, subtítulo en texto secundario y, a la derecha, buscador o filtros en forma de píldora.
 - **Contenido en tarjetas** con esquinas redondeadas, borde fino y separación uniforme, a todo el ancho de la pantalla. Sin barras de color decorativas.
 - **Todo lo que se puede pulsar parece un botón:** borde visible, relleno de tarjeta y foco visible con teclado. El detalle técnico se abre con un botón con ícono ⓘ ("Detalle", "Detalle del pronóstico", "Ver el cálculo", "Ver detalle del cálculo").
@@ -60,6 +61,7 @@ El mismo concepto lleva el mismo color en todas las gráficas:
 ### 5.1 Inicio
 - Fondo: red neuronal animada, con baja opacidad.
 - Al centro: "Demand Driven Replenishment", el título "Reposición guiada por la demanda", "Walmart · 10 tiendas · 2011–2016" y un único botón principal "Explorar los segmentos →". Sin cifras.
+- Debajo, "Elige el idioma" con el botón Español | English.
 
 ### 5.2 Segmentos
 - **Burbujas:** tres familias (Vitales, Útiles, Complementarios) en halos punteados; dentro, tres burbujas por regularidad (continuos, recurrentes, ocasionales) con relleno translúcido plano. Vitales a la izquierda con la marca "CON PRONÓSTICO". Tamaño por venta o por número de artículos (píldoras).
@@ -69,7 +71,8 @@ El mismo concepto lleva el mismo color en todas las gráficas:
 - Botón ⓘ **Detalle**: página con la comparación de error (pronóstico frente a línea base) de los tres grupos Vitales, la lista ordenable de sus artículos y la dispersión del CV.
 
 ### 5.3 Artículo
-- **Selector de artículo** con autocompletado y la píldora "Solo con pronóstico" (517 o 3.049). Sin artículo elegido se abre uno por defecto.
+- **Sin artículo elegido**, la página no muestra ninguna ficha: "Elige un artículo", una línea que explica para qué, la indicación "Haz clic en el buscador…" y el buscador grande con borde cian.
+- **Selector de artículo** con lupa a la izquierda y flecha de lista desplegable a la derecha (la flecha abre y cierra la lista), autocompletado y la píldora "Solo con pronóstico" (517 o 3.049).
 - Frase principal: "el pronóstico acertó N de cada 100 unidades…".
 - **Gráfica de unidades cada 4 semanas:** lo que se vendió, venta sin faltantes, pronóstico y línea base; la leyenda enciende y apaga cada serie y la media ±3σ. Píldoras "Toda la historia | Año de prueba" para acercarse. Al pasar el cursor, recuadro con la fecha y las unidades de cada serie, y aviso cuando hubo faltante. Eje de años; en el acercamiento, meses.
 - **¿Cuánto ahorra este artículo?:** menos sobrante, efecto en ventas perdidas y ahorro neto, con el botón "Ver el cálculo".
